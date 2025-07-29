@@ -7,21 +7,20 @@ import numpy as np
 import yaml
 import time
 
-from definitions.g1_definitions import Mujoco_IDX_12dof
-
+from definitions.go2_definitions import Mujoco_IDX_go2
 
 # main function to run the system
 if __name__ == '__main__':
-    
-    # load the config file
-    config_file = './config/g1_config.yaml'
-    with open(config_file, 'r') as file:
-        config = yaml.safe_load(file)   
 
-    # load the mujoco model 
-    mj_model_path = config['MODEL']['xml_path'] # mj_model reads the value assigned to xml_path, this value is the actual path to the .xml file
-    model = mujoco.MjModel.from_xml_path(mj_model_path) # contains the model description. remains constant
-    data = mujoco.MjData(model) # contains all dynamic variables and intermediate results
+    # load the config file
+    config_file = './config/go2_config.yaml'
+    with open(config_file, 'r') as file:
+        config = yaml.safe_load(file)
+
+    # load the mujoco model
+    mj_model_path = config['MODEL']['xml_path']
+    model = mujoco.MjModel.from_xml_path(mj_model_path)
+    data = mujoco.MjData(model)
 
     # setup the glfw window
     if not glfw.init():
@@ -38,23 +37,20 @@ if __name__ == '__main__':
     opt = mujoco.MjvOption()
     cam.distance = 2.0
     cam.elevation = -15
-    cam.azimuth = 135
+    cam.azimuth = 150
 
     # turn on reaction forces
     if config['VISUALIZATION']['grf']:
         opt.flags[mujoco.mjtVisFlag.mjVIS_CONTACTFORCE] = True
 
-    # create the scene and context
-    # scene means the general surroundings/environment including obstacles
-    # context means the model and its current state at that point in the simulation/control
+    # create the scene and cont
     scene = mujoco.MjvScene(model, maxgeom=1000)
     context = mujoco.MjrContext(model, mujoco.mjtFontScale.mjFONTSCALE_200)
 
     # create the index objects
-    mj_idx = Mujoco_IDX_12dof()
+    mj_idx = Mujoco_IDX_go2()
 
     # gains
-    # why do the gains lists need to be converted to numpy arrays?
     kp = np.array(config['GAINS']['kps'])
     kd = np.array(config['GAINS']['kds'])
 
@@ -62,11 +58,7 @@ if __name__ == '__main__':
     q0_joint = np.array(config['INITIAL_STATE']['default_angles'])
     v0_joint = np.zeros(len(q0_joint))
 
-
-    # NOTE: Kind of unclear about how values for model.nq, model.nv, and model.opt.timestep are initialized
-    # are these stored in the xml file?
-
-    # set the intitial state
+    # set the initial state
     data.qpos = np.zeros(model.nq)
     data.qvel = np.zeros(model.nv)
     data.qpos[mj_idx.q_base_pos_idx[0]] = config['INITIAL_STATE']['px']
@@ -86,8 +78,8 @@ if __name__ == '__main__':
     dt_render = 1.0 / hz_render
     counter = 0
     t1_wall = 0.0
-    t2_wall = 0.0
-    dt_wall  = 0.0
+    t2 = 0.0
+    dt_wall = 0.0
 
     # for control frequency
     hz_control = config['SIM']['hz_control']
@@ -97,53 +89,48 @@ if __name__ == '__main__':
     # for timing the total sim time
     t0_real_time = time.time()
 
-    fact = 1.0
+    fact = 0.0
 
     # main simulation loop
     while (not glfw.window_should_close(window)) and (t_sim < max_sim_time):
 
-        # get the current sim time
         t0_sim = data.time
 
-        # advance the simulation time until time to render
         while (t_sim - t0_sim) < (dt_render):
 
-            # start inner loop wall clock
             t1_wall = time.time()
-
-            # get current sim time and state
             t_sim = data.time
 
-            # do control at a desired rate
-            # NOTE: What is the decimation variable?
             if counter % decimation == 0:
 
-                # extract the joint states
-                # NOTE: Why does data also inherently have positions and quaternions stored? Also how did you know
-                # which values belong to which indices so that they'd match between the class and the data object?
                 q = data.qpos
                 v = data.qvel
 
-                # get the joint positions and velocities
                 q_joints = q[mj_idx.q_joint_idx]
                 v_joints = v[mj_idx.v_joint_idx]
 
-                # TODO: do contorl here, you can only control the joints
                 q_joints_des = np.zeros_like(q_joints)
                 v_joints_des = np.zeros_like(v_joints)
 
-                # Example: set desired joint angles to zero
-                # q_joints_des[0] = 0.1 * np.sin(2 * np.pi * 1.0 * t_sim)
-                # q_joints_des[0] = 0.1 * np.sin(2 * np.pi * 1.0 * t_sim)
-                # print(f'q_joints_des[0]: {q_joints_des[0]}')
+                # curl the right leg in
+                q_joints_des[4] = fact*0.75
+                q_joints_des[5] = -fact*2
 
-                
-                q_joints_des[3] = 0.1 * np.sin(2 * np.pi * fact * t_sim) # LKP
-                q_joints_des[9] = -0.1 * np.sin(2 * np.pi * fact * t_sim) # RKP
+                if q_joints_des[4] >= 0.79:
+                    q_joints_des[4] = 0.79
 
-                print(f'factor: {fact}')
-                fact = fact * 1.0001
-                
+                if q_joints_des[5] <= -1.8:
+                    q_joints_des[5] = -1.8
+
+                q_joints_des[1] = q_joints_des[4]
+                q_joints_des[7] = q_joints_des[4]
+                q_joints_des[10] = q_joints_des[4]
+
+                q_joints_des[2] = q_joints_des[5]
+                q_joints_des[8] = q_joints_des[5]
+                q_joints_des[11] = q_joints_des[5]      
+
+                fact += 0.0004
 
                 # compute torque from PID
                 u = -kp * (q_joints - q_joints_des) - kd * (v_joints - v_joints_des)
@@ -151,7 +138,7 @@ if __name__ == '__main__':
             # set the control torque
             data.ctrl[:] = u
 
-            # advance the simualtion 
+            # advance the simulation
             mujoco.mj_step(model, data)
 
             # wait until next sim update
@@ -159,10 +146,8 @@ if __name__ == '__main__':
             dt_wall = t2_wall - t1_wall
             dt_sleep = dt_sim - dt_wall
             if dt_sleep > 0.0:
-                # NOTE: Why 0.9 instead of just sleeping for dt_sleep?
                 time.sleep(dt_sleep)
 
-        # update the camera position relative to the x, y, z position NOTE: of the centroid/torso?
         px_base = data.qpos[mj_idx.q_base_pos_idx[0]]
         py_base = data.qpos[mj_idx.q_base_pos_idx[1]]
         pz_base = data.qpos[mj_idx.q_base_pos_idx[2]]
@@ -170,28 +155,23 @@ if __name__ == '__main__':
         cam.lookat[1] = py_base
         cam.lookat[2] = pz_base
 
-        # update the scene
         mujoco.mjv_updateScene(model, data, opt, None, cam, mujoco.mjtCatBit.mjCAT_ALL, scene)
 
-        # render the scene
         mujoco.mjr_render(viewport, scene, context)
 
-        # display simulation time overlay
         t1_real_time = time.time()
         label_text = f"Sim Time: {t_sim:.2f} sec \nWall Time: {t1_real_time - t0_real_time:.3f} sec"
         mujoco.mjr_overlay(
-            mujoco.mjtFontScale.mjFONTSCALE_200,   # font scale
-            mujoco.mjtGridPos.mjGRID_TOPLEFT,      # position on screen
-            viewport,                              # this must be the MjrRect, not context
-            label_text,                            # main overlay text (string, not bytes)
-            "",                                    # optional secondary text
-            context                                # render context
+            mujoco.mjtFontScale.mjFONTSCALE_200,    # font scale
+            mujoco.mjtGridPos.mjGRID_TOPLEFT,       # position on screen
+            viewport,                               # this must be the MjrRect, not context
+            label_text,                             # main overlay text (string, not bytes)
+            "",                                     # optional secondary text
+            context
         )
 
-        # swap the buffers
         glfw.swap_buffers(window)
 
-        # poll for window events
         glfw.poll_events()
 
-    print(f"Total simulation time: {t1_real_time - t0_real_time:.3f} seconds" )
+    print(f"Total simulation time: {t1_real_time - t0_real_time:.3f} seconds")

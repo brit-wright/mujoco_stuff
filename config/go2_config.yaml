@@ -1,0 +1,77 @@
+##########################################
+# ROBOT
+##########################################
+
+MODEL:
+
+    # robot name
+    robot_name: "go2"
+
+    # model file paths
+    xml_path: "./models/go2/go2.xml"
+    urdf_path: "./models/go2/go2.urdf"
+
+INITIAL_STATE:
+
+    # initial base position of the robot
+    px: 0.0
+    py: 0.0
+    pz: 0.355
+    # pz: 0.44
+
+    # default joint angles
+
+    # using the URDF
+
+    default_angles: [0, 0, -0.84,   # FLH[x-roll], FLT[y-pitch], FLC[y-pitch]
+                    0, 0, -0.84,    # FRH[x-roll], FRT[y-pitch], FRC[y-pitch]
+                    0, 0, -0.84,    # RLH[x-roll], RLT[y-pitch], RLC[y-pitch] 
+                    0, 0, -0.84]    # RRH[x-roll], RRT[y-pitch], RRC[y-pitch]
+
+
+    # default_angles: [0, 1, -1.53,   # FLH[x-roll], FLT[y-pitch], FLC[y-pitch]
+    #                 0, 1, -1.53,    # FRH[x-roll], FRT[y-pitch], FRC[y-pitch]
+    #                 0, 1, -1.53,    # RLH[x-roll], RLT[y-pitch], RLC[y-pitch] 
+    #                 0, 1, -1.53]    # RRH[x-roll], RRT[y-pitch], RRC[y-pitch]
+
+##############################################
+# SIMULATION
+##############################################
+
+SIM:
+
+    # maximum simulation time [s]
+    t_max: 30.0         # maximum simulation time
+
+    # rate for rendering the graphics
+    hz_render: 50.0     # GLFW render rate
+
+    # rate for control
+    hz_control: 100.0   # control update rate
+
+###############################################
+# GAINS
+###############################################
+
+GAINS:
+
+    # position gains
+    kps: [500, 500, 500, 
+          500, 500, 500,
+          500, 500, 500, 
+          500, 500, 500]
+
+    # velocity gains
+    kds: [15, 15, 15, 
+          15, 15, 15, 
+          15, 15, 15, 
+          15, 15, 15]
+
+################################################
+# VISUALIZATION
+################################################
+
+VISUALIZATION:
+
+    # see ground reaction forces
+    grf: true
