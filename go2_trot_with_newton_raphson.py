@@ -42,6 +42,7 @@ class Trajectory():
         q = data.qpos
         self.q_joints = q[mj_idx.q_joint_idx]
         self.qstable = self.q_joints
+        self.qcurr = self.qstable
 
         self.cycle = 0
 
@@ -192,11 +193,84 @@ class Trajectory():
                         theta_RL[0], theta_RL[1], theta_RL[2],
                         theta_RR[0], theta_RR[1], theta_RR[2]]
         
+        self.qcurr = self.qstable
+        
         return self.qstable
         
-    def evaluate(self):
-        pass
-    
+    def evaluate(self, t, dt):
+        
+        self.p_stable_base_foot_fl = self.chain_base_foot_fl.fkin(self.qstable[self.fl[0]: self.fl[-1]+1])[0]
+        self.p_stable_base_foot_fr = self.chain_base_foot_fr.fkin(self.qstable[self.fr[0]: self.fr[-1]+1])[0]
+        self.p_stable_base_foot_rl = self.chain_base_foot_rl.fkin(self.qstable[self.rl[0]: self.rl[-1]+1])[0]
+        self.p_stable_base_foot_rr = self.chain_base_foot_rr.fkin(self.qstable[self.rr[0]: self.rr[-1]+1])[0]
+
+        self.p_stable_base_hip_fl = self.chain_base_hip_fl.fkin(self.qstable[self.fl[0]: self.fl[1]])[0]
+        self.p_stable_base_hip_fr = self.chain_base_hip_fr.fkin(self.qstable[self.fr[0]: self.fr[1]])[0]
+        self.p_stable_base_hip_rl = self.chain_base_hip_rl.fkin(self.qstable[self.rl[0]: self.rl[1]])[0]
+        self.p_stable_base_hip_rr = self.chain_base_hip_rr.fkin(self.qstable[self.rr[0]: self.rr[1]])[0]
+
+        self.p_stable_base_thigh_fl = self.chain_base_thigh_fl.fkin(self.qstable[self.fl[0]: self.fl[-1]])[0]
+        self.p_stable_base_thigh_fr = self.chain_base_thigh_fr.fkin(self.qstable[self.fr[0]: self.fr[-1]])[0]
+        self.p_stable_base_thigh_rl = self.chain_base_thigh_rl.fkin(self.qstable[self.rl[0]: self.rl[-1]])[0]
+        self.p_stable_base_thigh_rr = self.chain_base_thigh_rr.fkin(self.qstable[self.rr[0]: self.rr[-1]])[0]
+
+        self.p_stable_foot_fl = self.p_stable_base_foot_fl - self.p_stable_base_hip_fl
+        self.p_stable_foot_fr = self.p_stable_base_foot_fr - self.p_stable_base_hip_fr
+        self.p_stable_foot_rl = self.p_stable_base_foot_rl - self.p_stable_base_hip_rl
+        self.p_stable_foot_rr = self.p_stable_base_foot_rr - self.p_stable_base_hip_rr
+
+        self.p_stable_thigh_fl = self.p_stable_base_thigh_fl - self.p_stable_base_hip_fl
+        self.p_stable_thigh_fr = self.p_stable_base_thigh_fr - self.p_stable_base_hip_fr
+        self.p_stable_thigh_rl = self.p_stable_base_thigh_rl - self.p_stable_base_hip_rl
+        self.p_stable_thigh_rr = self.p_stable_base_thigh_rr - self.p_stable_base_hip_rr
+
+        self.p_stable = np.concatenate((self.p_stable_foot_fl, self.p_stable_foot_fr, self.p_stable_foot_rl, self.p_stable_foot_rr))
+
+        left_up = np.array([0.0, 0.0, 0.15,
+                            0.0, 0.0, 0.0,
+                            0.0, 0.0, 0.0,
+                            0.0, 0.0, 0.15])
+        
+        right_up = np.array([0.0, 0.0, 0.0,
+                             0.0, 0.0, 0.15,
+                             0.0, 0.0, 0.15,
+                             0.0, 0.0, 0.0])
+        
+        self.leftup = self.p_stable + left_up
+        self.leftdown = self.p_stable
+        self.rightup = self.p_stable + right_up
+        self.rightdown = self.p_stable
+
+        cycle_len = 0.6
+
+        t = t % cycle_len
+
+        if t < 0.5 * cycle_len:
+
+            (s0, s0_dot) = self.goto(t, 0.5*cycle_len, 0.0, 1.0)
+
+            pd_leg = self.p_stable + (self.leftup - self.p_stable) * s0
+
+        elif t < cycle_len:
+
+            (s0, s0_dot) = self.goto(t-0.5*cycle_len, 0.5*cycle_len, 0.0, 1.0)
+
+            pd_leg = self.p_stable + (self.rightup - self.p_stable) * s0
+
+
+        theta_FL = NewtonRaphson(self.p_stable[0:3], pd_leg[0:3], self.qstable[0:3], self.chain_base_foot_fl, self.chain_base_hip_fl).call_newton_raphson()
+        theta_FR = NewtonRaphson(self.p_stable[3:6], pd_leg[3:6], self.qstable[3:6], self.chain_base_foot_fr, self.chain_base_hip_fr).call_newton_raphson()
+        theta_RL = NewtonRaphson(self.p_stable[6:9], pd_leg[6:9], self.qstable[6:9], self.chain_base_foot_rl, self.chain_base_hip_rl).call_newton_raphson()
+        theta_RR = NewtonRaphson(self.p_stable[9:12], pd_leg[9:12], self.qstable[9:12], self.chain_base_foot_rr, self.chain_base_hip_rr).call_newton_raphson()
+
+        self.qcurr = [theta_FL[0], theta_FL[1], theta_FL[2],
+                      theta_FR[0], theta_FR[1], theta_FR[2],
+                      theta_RL[0], theta_RL[1], theta_RL[2],
+                      theta_RR[0], theta_RR[1], theta_RR[2]]
+        
+        return self.qcurr
+
+
 # main function to run the system
 if __name__ == '__main__':
 
@@ -337,11 +411,11 @@ if __name__ == '__main__':
 
                     q_joints_des = traj.stabilize(t_stabx, T_stab, deltx, z_command)
 
-                # else:
+                else:
 
-                #     t_curr = t_sim - (t0 + T_stab)
+                    t_curr = t_sim - (t0 + T_stab)
 
-                #     q_joints_des = traj.evaluate(t_curr, dt_sim)
+                    q_joints_des = traj.evaluate(t_curr, dt_sim)
 
                 # compute torque from PID
                 u = -kp * (q_joints - q_joints_des) - kd * (v_joints - v_joints_des)
