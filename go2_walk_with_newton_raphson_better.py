@@ -1,5 +1,5 @@
 # Features
-# DIAGONAL trotting
+# WALKING FORWARD
 # Starts from some user-defined stable configuration
 # Newton-Raphson Method for Inverse Kinematics
 
@@ -35,6 +35,10 @@ class Trajectory():
         self.rl = [6, 7, 8]
         self.rr = [9, 10, 11]
 
+        self.x_list = []
+        self.t_list = []
+        self.z_list = []
+
         # TODO: Define the kinematice chain
 
         
@@ -49,6 +53,8 @@ class Trajectory():
         self.urdf = './models/go2/go2.urdf'
 
         # set up the kinematic chains for each leg
+
+        self.cycle_len = 0.4
 
         # chains from base to foot
         self.chain_base_foot_fl = KinematicChain('base', 'FL_foot', self.jointnames()[0:3], self.urdf)
@@ -117,26 +123,43 @@ class Trajectory():
     
     def goto(self, t, T, p0, pf):
 
-        p = p0 + (pf - p0) * (4*(t/T) - 4*(t/T)**2)
-        v = (pf - p0) * (4/T - 8*(t/T**2))
+        # p = p0 + (pf - p0) * (4*(t/T) - 4*(t/T)**2)
+        # v = (pf - p0) * (4/T - 8*(t/T**2))
+
+        p = p0 + (pf-p0)   * (3*(t/T)**2 - 2*(t/T)**3)
+        v =    + (pf-p0)/T * (6*(t/T)    - 6*(t/T)**2)
 
         return (p, v)
     
-    def stabilize(self, t, T, deltax, z_comm): # assume deltax is zero
+    def stabilize(self, t, T, z_comm, vx): # assume deltax is zero
         
+        self.deltx = vx * self.cycle_len/4
 
         p0_FLx = self.p0_foot_fl[0]
-        pf_FLx = self.p0_thigh_fl[0]
+        pf_FLx = self.p0_thigh_fl[0] + self.deltx/2
 
 
         p0_FRx = self.p0_foot_fr[0]
-        pf_FRx = self.p0_thigh_fr[0]
+        pf_FRx = self.p0_thigh_fr[0] - self.deltx/2
 
         p0_RLx = self.p0_foot_rl[0]
-        pf_RLx = self.p0_thigh_rl[0]
+        pf_RLx = self.p0_thigh_rl[0] - self.deltx/2
 
         p0_RRx = self.p0_foot_rr[0]
-        pf_RRx = self.p0_thigh_rr[0]
+        pf_RRx = self.p0_thigh_rr[0] + self.deltx/2
+
+        # p0_FLx = self.p0_foot_fl[0]
+        # pf_FLx = self.p0_thigh_fl[0] + 0.1
+
+
+        # p0_FRx = self.p0_foot_fr[0]
+        # pf_FRx = self.p0_thigh_fr[0] - 0.1
+
+        # p0_RLx = self.p0_foot_rl[0]
+        # pf_RLx = self.p0_thigh_rl[0] - 0.1
+
+        # p0_RRx = self.p0_foot_rr[0]
+        # pf_RRx = self.p0_thigh_rr[0] + 0.1
 
         # the desired leg z-position is just the negative of the z command
         p0_FLz = self.p0_foot_fl[2]
@@ -196,9 +219,8 @@ class Trajectory():
         self.qcurr = self.qstable
         
         return self.qstable
-        
-    def evaluate(self, t, dt):
-        
+    
+    def choose_gait_start(self):
         self.p_stable_base_foot_fl = self.chain_base_foot_fl.fkin(self.qstable[self.fl[0]: self.fl[-1]+1])[0]
         self.p_stable_base_foot_fr = self.chain_base_foot_fr.fkin(self.qstable[self.fr[0]: self.fr[-1]+1])[0]
         self.p_stable_base_foot_rl = self.chain_base_foot_rl.fkin(self.qstable[self.rl[0]: self.rl[-1]+1])[0]
@@ -225,48 +247,116 @@ class Trajectory():
         self.p_stable_thigh_rr = self.p_stable_base_thigh_rr - self.p_stable_base_hip_rr
 
         self.p_stable = np.concatenate((self.p_stable_foot_fl, self.p_stable_foot_fr, self.p_stable_foot_rl, self.p_stable_foot_rr))
-
-        left_up = np.array([0.0, 0.0, 0.15,
-                            0.0, 0.0, 0.0,
-                            0.0, 0.0, 0.0,
-                            0.0, 0.0, 0.15])
+        self.pdlast = self.p_stable
         
-        right_up = np.array([0.0, 0.0, 0.0,
-                             0.0, 0.0, 0.15,
-                             0.0, 0.0, 0.15,
-                             0.0, 0.0, 0.0])
+        return self.p_stable
+    
+    def evaluate(self, t, dt):
+
+        # Note: every cycle starts off with the front left forward
+
+        # print(f'self.deltx: {self.deltx}')
+
+        def double_stance1():
+            
+            pd_leg = self.pdlast
+
+            self.stance1 = pd_leg
+
+            return pd_leg
+
+        def stanceleft_swingright(t_curr, T, start, end):
+            
+            # need to calculate pdleg based on location in phase we're at
+
+            # first determine x location using linear interpolation
+            x_curr = start + (end - start) * (t_curr/T)
+
+            # now we determing the z location by defining a parabola
+            z_curr = -x_curr * (x_curr - T) * 30
+
+            # now we adjust pd_leg based on these values
+            pd_leg = self.stance1 + np.array([-x_curr, 0.0, 0.0,
+                                x_curr, 0.0, z_curr,
+                                x_curr, 0.0, z_curr,
+                                -x_curr, 0.0, 0.0])
+            
+            return pd_leg
+
+        def double_stance2():
+            
+            pd_leg = self.pdlast
+
+            self.stance2 = pd_leg
+
+            return pd_leg
+
+        def swingleft_stanceright(t_curr, T, start, end):
+            
+            # need to calculate pdleg based on location in phase we're at
+
+            # first determine x location using linear interpolation
+            x_curr = start + (end - start) * (t_curr/T)
+
+            # now we determing the z location by defining a parabola
+            
+            z_curr = -x_curr * (x_curr - T) * 30
+
+            # now we adjust pd_leg based on these values
+            pd_leg = self.stance2 + np.array([x_curr, 0.0, z_curr,
+                                -x_curr, 0.0, 0.0,
+                                -x_curr, 0.0, 0.0,
+                                x_curr, 0.0, z_curr])
+            
+            print(f'pd_leg is: {pd_leg}')
+            print(f'x_curr is: {x_curr}')
+            
+            return pd_leg
         
-        self.leftup = self.p_stable + left_up
-        self.leftdown = self.p_stable
-        self.rightup = self.p_stable + right_up
-        self.rightdown = self.p_stable
+        if t - self.cycle * self.cycle_len > self.cycle_len:
 
-        cycle_len = 0.5
+            # print(f'checking x-positions: {self.pdlast[0]}, {self.pdlast[3]}, {self.pdlast[6]}, {self.pdlast[9]}')
+            self.cycle += 1
 
-        t = t % cycle_len
+        t = t % self.cycle_len
 
-        if t < 0.5 * cycle_len:
+        if t < 0.25 * self.cycle_len:
+            # print('phase1')
+            pd_leg = double_stance1()
 
-            (s0, s0_dot) = self.goto(t, 0.5*cycle_len, 0.0, 1.0)
+        elif t < 0.5 * self.cycle_len:
+            # print('phase2')
+            pd_leg = stanceleft_swingright(t - 0.25*self.cycle_len, 0.25*self.cycle_len, 0, self.deltx)
 
-            pd_leg = self.p_stable + (self.leftup - self.p_stable) * s0
+        elif t < 0.75 * self.cycle_len:
+            
+            # print('phase3')
+            pd_leg = double_stance2()
 
-        elif t < cycle_len:
+        elif t < self.cycle_len:
 
-            (s0, s0_dot) = self.goto(t-0.5*cycle_len, 0.5*cycle_len, 0.0, 1.0)
+            # print('phase4')
+            pd_leg = swingleft_stanceright(t - 0.75*self.cycle_len, 0.25*self.cycle_len, 0, self.deltx)
 
-            pd_leg = self.p_stable + (self.rightup - self.p_stable) * s0
+        else:
+            print('nothing satisfied')
 
+        # print(f't is {t}')
+        theta_FL = NewtonRaphson(self.pdlast[0:3], pd_leg[0:3], self.qcurr[0:3], self.chain_base_foot_fl, self.chain_base_hip_fl).call_newton_raphson()
+        theta_FR = NewtonRaphson(self.pdlast[3:6], pd_leg[3:6], self.qcurr[3:6], self.chain_base_foot_fr, self.chain_base_hip_fr).call_newton_raphson()
+        theta_RL = NewtonRaphson(self.pdlast[6:9], pd_leg[6:9], self.qcurr[6:9], self.chain_base_foot_rl, self.chain_base_hip_rl).call_newton_raphson()
+        theta_RR = NewtonRaphson(self.pdlast[9:12], pd_leg[9:12], self.qcurr[9:12], self.chain_base_foot_rr, self.chain_base_hip_rr).call_newton_raphson()
 
-        theta_FL = NewtonRaphson(self.p_stable[0:3], pd_leg[0:3], self.qstable[0:3], self.chain_base_foot_fl, self.chain_base_hip_fl).call_newton_raphson()
-        theta_FR = NewtonRaphson(self.p_stable[3:6], pd_leg[3:6], self.qstable[3:6], self.chain_base_foot_fr, self.chain_base_hip_fr).call_newton_raphson()
-        theta_RL = NewtonRaphson(self.p_stable[6:9], pd_leg[6:9], self.qstable[6:9], self.chain_base_foot_rl, self.chain_base_hip_rl).call_newton_raphson()
-        theta_RR = NewtonRaphson(self.p_stable[9:12], pd_leg[9:12], self.qstable[9:12], self.chain_base_foot_rr, self.chain_base_hip_rr).call_newton_raphson()
+        if None in theta_FL or None in theta_FR or None in theta_RL or None in theta_RR:
+            print(f'pause here. failed at t = {t} \n {theta_FL}, {theta_FR}, {theta_RL}, {theta_RR}')
+
 
         self.qcurr = [theta_FL[0], theta_FL[1], theta_FL[2],
                       theta_FR[0], theta_FR[1], theta_FR[2],
                       theta_RL[0], theta_RL[1], theta_RL[2],
                       theta_RR[0], theta_RR[1], theta_RR[2]]
+        
+        self.pdlast = pd_leg
         
         return self.qcurr
 
@@ -298,7 +388,7 @@ if __name__ == '__main__':
     cam = mujoco.MjvCamera()
     opt = mujoco.MjvOption()
     cam.distance = 2.0
-    cam.elevation = -15
+    cam.elevation = -1
     cam.azimuth = 90
 
     # turn on reaction forces
@@ -364,10 +454,11 @@ if __name__ == '__main__':
 
     q_joints_des = np.zeros_like(q_joints)
 
-    t0 = 2.0
-    T_stab = 2.0
+    t0 = 0.5
+    T_stab = 0.5
     deltx = 0.0
-    z_command = 0.30
+    z_command = 0.35
+    v_bod = 1
 
     # main simulation loop
     while (not glfw.window_should_close(window)) and (t_sim < max_sim_time):
@@ -409,7 +500,9 @@ if __name__ == '__main__':
                     # so here we send over the current time t_stab and the time for which I want it to perform the stabilization
                     # for T_stab. Also send over the desired deltax (in this case 0) and some desired initial z position
 
-                    q_joints_des = traj.stabilize(t_stabx, T_stab, deltx, z_command)
+                    q_joints_des = traj.stabilize(t_stabx, T_stab, z_command, v_bod)
+
+                    traj.p_stable = traj.choose_gait_start()
 
                 else:
 
@@ -422,6 +515,21 @@ if __name__ == '__main__':
 
             # set the control torque
             data.ctrl[:] = u
+
+            # data.qpos[0] = 0
+            # data.qpos[1] = 0
+            # data.qpos[2] = 1 #this
+            # data.qpos[3] = 1
+            # data.qpos[4] = 0
+            # data.qpos[5] = 0
+            # data.qpos[6] = 0
+
+            # data.qvel[0] = 0
+            # data.qvel[1] = 0
+            # data.qvel[2] = 0 # this
+            # data.qvel[3] = 0
+            # data.qvel[4] = 0
+            # data.qvel[5] = 0 
 
             # advance the simulation
             mujoco.mj_step(model, data)
