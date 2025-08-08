@@ -4,12 +4,7 @@
 # Uses a double-stance walking gait
 # Newton-Raphson Method for Inverse Kinematics
 # Calculates z-foot position using Bezier curves
-# No drift handling
-
-# Questions
-# 1. With my current implementation of Bezier curves, the curve never actually reaches the desired max height 
-# Not sure how much of a hard requirement it is but if it is a hard requirement, would it be better to just create 
-# two curves and join them?
+# First attempt at fixing y-drift issue - corrections during the double stance phases
 
 # Can work on fixing the weird jumping at the beginning of the gait. I think that's what causes the turning
 
@@ -27,6 +22,7 @@ from definitions.go2_definitions import Mujoco_IDX_go2
 from definitions.KinematicChain import KinematicChain
 from definitions.NewtonRaphson import NewtonRaphson
 from definitions.Bezier2D import Bezier2D
+from definitions.Bezier3D import Bezier3D
 
 from hw5code.TransformHelpers import *
 
@@ -256,16 +252,33 @@ class Trajectory():
 
         # Note: every cycle starts off with the front left forward
 
-        def double_stance1(t_curr, T, start, end):
+        def double_stance1(t_curr, T, start, end, ystart, yend):
             
+            # # METHOD 1 START
+            # x_stance = start + (end - start) * (t_curr/T)
+
+            # bez = Bezier3D(start, end, 0.0, 0.0, ystart, yend)
+
+            # x_curr = (x_stance - start)/(end - start)
+            # y_stance = bez.create_bezier(x_curr)[1]
+
+            # pd_leg = self.pd_leg_start + np.array([-x_stance, y_stance, 0.0,
+            #                                         -x_stance, y_stance, 0.0,
+            #                                         -x_stance, y_stance, 0.0,
+            #                                         -x_stance, y_stance, 0.0,])
+
+            # # METHOD 1 END
+
+            # METHOD 2 START
             x_curr = start + (end - start) * (t_curr/T)
+            y_stance = ystart + (yend - ystart) * (t_curr/T)
 
-            # this is applied to both legs, both legs move backward
+            pd_leg = self.pd_leg_start + np.array([-x_curr, y_stance, 0.0,
+                                                    -x_curr, y_stance, 0.0,
+                                                    -x_curr, y_stance, 0.0,
+                                                    -x_curr, y_stance, 0.0,])
 
-            pd_leg = self.pd_leg_start + np.array([-x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,])
+            # METHOD 2 END
 
             return pd_leg
 
@@ -304,16 +317,39 @@ class Trajectory():
             
             return pd_leg
 
-        def double_stance2(t_curr, T, start, end):
+        def double_stance2(t_curr, T, start, end, ystart, yend):
             
+
+            # # METHOD 1 START
+            # x_stance = start + (end - start) * (t_curr/T)
+            # bez = Bezier3D(start, end, 0.0, 0.0, ystart, yend)
+            # x_curr = (x_stance - start)/(end - start)
+            # y_stance = bez.create_bezier(x_curr)[1]
+
+            # print(f'y-start: {ystart}')
+            # print(f'y-end: {yend}')
+            # print(f'(x_curr, y_curr): {(x_curr, y_stance)}')
+
+            # pd_leg = self.double2_start + np.array([-x_stance, y_stance, 0.0,
+            #                                         -x_stance, y_stance, 0.0,
+            #                                         -x_stance, y_stance, 0.0,
+            #                                         -x_stance, y_stance, 0.0,])
+
+            # # METHOD 1 END
+
+            # METHOD 2 START
             x_curr = start + (end - start) * (t_curr/T)
+            y_stance = ystart + (yend - ystart) * (t_curr/T)
 
-            # this is applied to both legs, both legs move backward
+            pd_leg = self.double2_start + np.array([-x_curr, y_stance, 0.0,
+                                                    -x_curr, y_stance, 0.0,
+                                                    -x_curr, y_stance, 0.0,
+                                                    -x_curr, y_stance, 0.0,])
 
-            pd_leg = self.double2_start + np.array([-x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,])
+            # METHOD 2 END
+
+
+            
 
             return pd_leg
 
@@ -366,26 +402,41 @@ class Trajectory():
         if t < self.cycle_len/8: # this lasts for 1/8th of the period
 
             # checking this method - this method seems to be the best but i don't know why :/
+            print(f'Current body position: {data.qpos[mj_idx.q_base_pos_idx]}')
             if self.cycle == 0:
                 pd_leg = self.pdlast
                 self.stance1 = pd_leg
             else:
-                pd_leg = double_stance1(t, self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
+                y_delt = self.bod_swingleft[1] - self.bod_double_stance2[1]
+
+                pd_leg = double_stance1(t, self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len), 0, y_delt)
                 self.stance1 = pd_leg
+            self.bod_doublestance1 = data.qpos[mj_idx.q_base_pos_idx]
 
         # single stance for the left leg and swing for the right leg
         elif t < (4/8) * self.cycle_len: # this lasts 3/8th of the time
             # print('flopped here')
+            print(f'Current body position: {data.qpos[mj_idx.q_base_pos_idx]}')
             pd_leg = stanceleft_swingright(t - self.double_stance_time, self.single_stance_time, 0, self.deltx)
             self.double2_start = pd_leg
+            self.bod_swingright = data.qpos[mj_idx.q_base_pos_idx]
 
         elif t < (5/8) * self.cycle_len:
-            pd_leg = double_stance2(t - (self.double_stance_time + self.single_stance_time), self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
+            print(f'Current body position: {data.qpos[mj_idx.q_base_pos_idx]}')
+
+            # calculate the change in y between initial (self.bod_stance1) and final (self.bod_double2_start)
+            y_delt = self.bod_swingright[1] - self.bod_doublestance1[1]
+            print(f'y_delt is {y_delt}')
+
+            pd_leg = double_stance2(t - (self.double_stance_time + self.single_stance_time), self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len), 0, y_delt)
             self.stance2 = pd_leg
+            self.bod_double_stance2 = data.qpos[mj_idx.q_base_pos_idx]
 
         elif t < self.cycle_len:
+            print(f'Current body position: {data.qpos[mj_idx.q_base_pos_idx]}')
             pd_leg = swingleft_stanceright(t - (2*self.double_stance_time+self.single_stance_time), self.single_stance_time, 0, self.deltx)
             self.double1_start = pd_leg
+            self.bod_swingleft = data.qpos[mj_idx.q_base_pos_idx]
 
         else:
             print('discrete timing sucks')
@@ -439,6 +490,7 @@ if __name__ == '__main__':
     # cam.elevation = -1
     cam.elevation = -15
     cam.azimuth = 90
+    # cam.azimuth = 180
 
     # turn on reaction forces
     if config['VISUALIZATION']['grf']:

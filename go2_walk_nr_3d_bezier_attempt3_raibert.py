@@ -4,14 +4,7 @@
 # Uses a double-stance walking gait
 # Newton-Raphson Method for Inverse Kinematics
 # Calculates z-foot position using Bezier curves
-# No drift handling
-
-# Questions
-# 1. With my current implementation of Bezier curves, the curve never actually reaches the desired max height 
-# Not sure how much of a hard requirement it is but if it is a hard requirement, would it be better to just create 
-# two curves and join them?
-
-# Can work on fixing the weird jumping at the beginning of the gait. I think that's what causes the turning
+# Using Raibert's method to get rid of y-drift
 
 #!/usr/bin/env python3.10
 
@@ -389,6 +382,20 @@ class Trajectory():
 
         else:
             print('discrete timing sucks')
+
+
+        v_base_y_curr = data.qvel[mj_idx.VEL_Y]
+        # print(f'current y-velocity: {v_base_y_curr}')
+        print(f'current y-position: {data.qvel[mj_idx.POS_Y]}')
+        v_base_y_desired = 0.0
+        # kv = -0.009 # i think this is the best one so far lol
+        kv = -0.05 # nvm this is the best one
+
+        pd_leg[1] = pd_leg[1] - kv*(v_base_y_curr - v_base_y_desired)
+        pd_leg[4] = pd_leg[4] - kv*(v_base_y_curr - v_base_y_desired)
+        pd_leg[7] = pd_leg[7] - kv*(v_base_y_curr - v_base_y_desired)
+        pd_leg[10] = pd_leg[10] - kv*(v_base_y_curr - v_base_y_desired)
+
 
         theta_FL = NewtonRaphson(self.pdlast[0:3], pd_leg[0:3], self.qcurr[0:3], self.chain_base_foot_fl, self.chain_base_hip_fl).call_newton_raphson()
         theta_FR = NewtonRaphson(self.pdlast[3:6], pd_leg[3:6], self.qcurr[3:6], self.chain_base_foot_fr, self.chain_base_hip_fr).call_newton_raphson()

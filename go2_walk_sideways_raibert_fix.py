@@ -1,17 +1,14 @@
 # Features
-# WALKING FORWARD
+# WALKING SIDEWAYS
 # Starts from some user-defined stable configuration
 # Uses a double-stance walking gait
 # Newton-Raphson Method for Inverse Kinematics
 # Calculates z-foot position using Bezier curves
-# No drift handling
 
-# Questions
-# 1. With my current implementation of Bezier curves, the curve never actually reaches the desired max height 
-# Not sure how much of a hard requirement it is but if it is a hard requirement, would it be better to just create 
-# two curves and join them?
-
-# Can work on fixing the weird jumping at the beginning of the gait. I think that's what causes the turning
+# Problems
+# Some weird arcing happens during the sideways walking 
+# --> I've managed to minimize it for the most part by keeping the stabilization function
+# Works better at higher gains, higher foot reaches, and higher body heights
 
 #!/usr/bin/env python3.10
 
@@ -119,8 +116,14 @@ class Trajectory():
         self.l_calf = 0.213
 
         # Define the stance timings from self.cycle_len
-        self.single_stance_time = 3 * self.cycle_len/8
-        self.double_stance_time = self.cycle_len/8
+        # self.single_stance_time = 3 * self.cycle_len/8
+        # self.double_stance_time = self.cycle_len/8
+
+        # self.single_stance_time = 7 * self.cycle_len/16
+        # self.double_stance_time = self.cycle_len/16
+
+        self.single_stance_time = 15 * self.cycle_len/32
+        self.double_stance_time = self.cycle_len/32
 
 
     # define the names of the joints
@@ -141,25 +144,24 @@ class Trajectory():
 
         return (p, v)
     
-    def stabilize(self, t, T, z_comm, vx): # assume deltax is zero
+    def stabilize(self, t, T, z_comm, vy): # assume deltax is zero
         
-        self.deltx = vx * self.single_stance_time
+        self.delty = vy * self.single_stance_time
 
         # new stance positioning
-        new_deltx = (self.deltx - (self.deltx * (self.double_stance_time/self.cycle_len))) * 1/2
         
-        p0_FLx = self.p0_foot_fl[0]
-        pf_FLx = self.p0_thigh_fl[0] + new_deltx
+        p0_FLy = self.p0_foot_fl[1]
+        pf_FLy = self.p0_thigh_fl[1] + self.delty/2
 
 
-        p0_FRx = self.p0_foot_fr[0]
-        pf_FRx = self.p0_thigh_fr[0] - new_deltx
+        p0_FRy = self.p0_foot_fr[1]
+        pf_FRy = self.p0_thigh_fr[1] - self.delty/2
 
-        p0_RLx = self.p0_foot_rl[0]
-        pf_RLx = self.p0_thigh_rl[0] - new_deltx
+        p0_RLy = self.p0_foot_rl[1]
+        pf_RLy = self.p0_thigh_rl[1] - self.delty/2
 
-        p0_RRx = self.p0_foot_rr[0]
-        pf_RRx = self.p0_thigh_rr[0] + new_deltx
+        p0_RRy = self.p0_foot_rr[1]
+        pf_RRy = self.p0_thigh_rr[1] + self.delty/2
 
         # the desired leg z-position is just the negative of the z command
         p0_FLz = self.p0_foot_fl[2]
@@ -178,33 +180,33 @@ class Trajectory():
 
         alph = t/T
 
-        pdes_x = (1 - alph) * p0_FLx + alph * pf_FLx
+        pdes_y = (1 - alph) * p0_FLy + alph * pf_FLy
         pdes_z = (1 - alph) * p0_FLz + alph * pf_FLz
-        pcurr_FL = [pdes_x, self.p0_foot_fl[1], pdes_z]
+        pcurr_FL = [self.p0_foot_fl[0], pdes_y, pdes_z]
 
         # calculate the inverse kinematics by passing pcurr_FL, q_curr, and 
         theta_FL = NewtonRaphson(self.p0_foot_fl, pcurr_FL, self.qstable[0:3], self.chain_base_foot_fl, self.chain_base_hip_fl).call_newton_raphson()
 
 
-        pdes_x = (1 - alph) * p0_FRx + alph * pf_FRx
+        pdes_y = (1 - alph) * p0_FRy + alph * pf_FRy
         pdes_z = (1 - alph) * p0_FRz + alph * pf_FRz
-        pcurr_FR = [pdes_x, self.p0_foot_fr[1], pdes_z]
+        pcurr_FR = [self.p0_foot_fr[0], pdes_y, pdes_z]
 
         # calculate the inverse kinematics by passing pcurr_FL, q_curr, and 
         theta_FR = NewtonRaphson(self.p0_foot_fr, pcurr_FR, self.qstable[3:6], self.chain_base_foot_fr, self.chain_base_hip_fr).call_newton_raphson()
         
 
-        pdes_x = (1 - alph) * p0_RLx + alph * pf_RLx
+        pdes_y = (1 - alph) * p0_RLy + alph * pf_RLy
         pdes_z = (1 - alph) * p0_RLz + alph * pf_RLz
-        pcurr_RL = [pdes_x, self.p0_foot_rl[1], pdes_z]
+        pcurr_RL = [self.p0_foot_rl[0], pdes_y, pdes_z]
 
         # calculate the inverse kinematics by passing pcurr_FL, q_curr, and 
         theta_RL = NewtonRaphson(self.p0_foot_rl, pcurr_RL, self.qstable[6:9], self.chain_base_foot_rl, self.chain_base_hip_rl).call_newton_raphson()
 
         
-        pdes_x = (1 - alph) * p0_RRx + alph * pf_RRx
+        pdes_y = (1 - alph) * p0_RRy + alph * pf_RRy
         pdes_z = (1 - alph) * p0_RRz + alph * pf_RRz
-        pcurr_RR = [pdes_x, self.p0_foot_rr[1], pdes_z]
+        pcurr_RR = [self.p0_foot_rr[0], pdes_y, pdes_z]
 
         # calculate the inverse kinematics by passing pcurr_FL, q_curr, and 
         theta_RR = NewtonRaphson(self.p0_foot_rr, pcurr_RR, self.qstable[9:12], self.chain_base_foot_rr, self.chain_base_hip_rr).call_newton_raphson() 
@@ -258,26 +260,27 @@ class Trajectory():
 
         def double_stance1(t_curr, T, start, end):
             
-            x_curr = start + (end - start) * (t_curr/T)
+            y_curr = start + (end - start) * (t_curr/T)
 
             # this is applied to both legs, both legs move backward
 
-            pd_leg = self.pd_leg_start + np.array([-x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,])
+
+            pd_leg = self.pd_leg_start + np.array([0.0, -y_curr, 0.0,
+                                                   0.0, -y_curr, 0.0,
+                                                   0.0, -y_curr, 0.0,
+                                                   0.0, -y_curr, 0.0,])
 
             return pd_leg
 
         def stanceleft_swingright(t_curr, T, start, end):
 
             # calculate x_swing
-            x_swing = start + (end - start) * (t_curr/T)
+            y_swing = start + (end - start) * (t_curr/T)
             
 
             # calculate x_stance
             end_stance = end * (1 - (2 * self.double_stance_time)/self.cycle_len)
-            x_stance = start + (end_stance - start) * (t_curr/T)
+            y_stance = start + (end_stance - start) * (t_curr/T)
 
             # calculate z_swing using bezier curve
             # z_swing = -x_swing * (x_swing - end) * 30
@@ -286,34 +289,27 @@ class Trajectory():
             bez = Bezier2D(start, end, self.p_stable[5], 0.1)
 
             # need to normalize x to be between 0 and 1
-            x_curr = (x_swing - start)/(end - start)
+            y_curr = (y_swing - start)/(end - start)
 
-            z_swing = bez.create_bezier(x_curr)
+            z_swing = bez.create_bezier(y_curr)
 
-            # now we adjust pd_leg based on these values
-            pd_leg = self.stance1 + np.array([-x_stance, 0.0, 0.0,
-                                x_swing, 0.0, z_swing,
-                                x_swing, 0.0, z_swing,
-                                -x_stance, 0.0, 0.0])
-            
-
-            if self.cycle == 2:
-                
-                self.x_list.append(x_swing)
-                self.z_list.append(z_swing)
+            pd_leg = self.stance1 + np.array([0.0, -y_stance, 0.0,
+                                              0.0, y_swing, z_swing,
+                                              0.0, y_swing, z_swing,
+                                              0.0, -y_stance, 0.0])
             
             return pd_leg
 
         def double_stance2(t_curr, T, start, end):
             
-            x_curr = start + (end - start) * (t_curr/T)
+            y_curr = start + (end - start) * (t_curr/T)
 
             # this is applied to both legs, both legs move backward
 
-            pd_leg = self.double2_start + np.array([-x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,])
+            pd_leg = self.double2_start + np.array([0.0, -y_curr, 0.0,
+                                                    0.0, -y_curr, 0.0,
+                                                    0.0, -y_curr, 0.0,
+                                                    0.0, -y_curr, 0.0,])
 
             return pd_leg
 
@@ -323,72 +319,83 @@ class Trajectory():
             # 4th order curve
 
             # calculate x_swing
-            x_swing = start + (end - start) * (t_curr/T)
+            y_swing = start + (end - start) * (t_curr/T)
 
             # calculate x_stance
             end_stance = end * (1 - (2 * self.double_stance_time)/self.cycle_len)
-            x_stance = start + (end_stance - start) * (t_curr/T)
+            y_stance = start + (end_stance - start) * (t_curr/T)
 
             # calculate z_swing using bezier curve
-            # z_swing = -x_swing * (x_swing - end) * 30
 
             # chose and arbitrary height for step height
             bez = Bezier2D(start, end, self.p_stable[2], 0.1)
 
             # need to normalize x to be between 0 and 1
-            x_curr = (x_swing - start)/(end - start)
+            y_curr = (y_swing - start)/(end - start)
 
-            z_swing = bez.create_bezier(x_curr)
-            # print(f'z_swing is: {z_swing}')
+            z_swing = bez.create_bezier(y_curr)
+        
 
-            # now we adjust pd_leg based on these values
-            pd_leg = self.stance2 + np.array([x_swing, 0.0, z_swing,
-                                              -x_stance, 0.0, 0.0,
-                                              -x_stance, 0.0, 0.0,
-                                              x_swing, 0.0, z_swing])
+            pd_leg = self.stance2 + np.array([0.0, y_swing, z_swing,
+                                              0.0, -y_stance, 0.0,
+                                              0.0, -y_stance, 0.0,
+                                              0.0, y_swing, z_swing])
             
             return pd_leg
         
         if t - self.cycle * self.cycle_len > self.cycle_len:
 
+            # print(f'checking x-positions: {self.pdlast[0]}, {self.pdlast[3]}, {self.pdlast[6]}, {self.pdlast[9]}')
             self.pd_leg_start = self.double1_start
             # self.pd_leg_start[2::3] = self.p_stable[2::3]
             self.cycle += 1
 
-            if self.cycle == 0:
-                print(f'Iteration {self.cycle}: current base position: {data.qpos[mj_idx.q_base_pos_idx]}')
-
-            if self.cycle % 8 == 0:
-                print(f'Iteration {self.cycle}: current base position: {data.qpos[mj_idx.q_base_pos_idx]}')
 
         t = t % self.cycle_len
 
-        if t < self.cycle_len/8: # this lasts for 1/8th of the period
+        if t < self.double_stance_time: 
 
-            # checking this method - this method seems to be the best but i don't know why :/
-            if self.cycle == 0:
-                pd_leg = self.pdlast
-                self.stance1 = pd_leg
-            else:
-                pd_leg = double_stance1(t, self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
-                self.stance1 = pd_leg
+            # smarter fix
+            pd_leg = double_stance1(t, self.double_stance_time, 0, self.delty * (self.double_stance_time/self.cycle_len))
+            self.stance1 = pd_leg
+
+            # # checking this method - this method seems to be the best but i don't know why :/
+            # if self.cycle == 0:
+            #     pd_leg = self.pdlast
+            #     self.stance1 = pd_leg
+            # else:
+            #     pd_leg = double_stance1(t, self.double_stance_time, 0, self.delty * (self.double_stance_time/self.cycle_len))
+            #     self.stance1 = pd_leg
 
         # single stance for the left leg and swing for the right leg
-        elif t < (4/8) * self.cycle_len: # this lasts 3/8th of the time
+        elif t < (self.double_stance_time + self.single_stance_time): # this lasts 3/8th of the time
             # print('flopped here')
-            pd_leg = stanceleft_swingright(t - self.double_stance_time, self.single_stance_time, 0, self.deltx)
+            pd_leg = stanceleft_swingright(t - self.double_stance_time, self.single_stance_time, 0, self.delty)
             self.double2_start = pd_leg
 
-        elif t < (5/8) * self.cycle_len:
-            pd_leg = double_stance2(t - (self.double_stance_time + self.single_stance_time), self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
+        elif t < (self.double_stance_time + self.double_stance_time + self.single_stance_time):
+            pd_leg = double_stance2(t - (self.double_stance_time + self.single_stance_time), self.double_stance_time, 0, self.delty * (self.double_stance_time/self.cycle_len))
             self.stance2 = pd_leg
 
         elif t < self.cycle_len:
-            pd_leg = swingleft_stanceright(t - (2*self.double_stance_time+self.single_stance_time), self.single_stance_time, 0, self.deltx)
+            pd_leg = swingleft_stanceright(t - (2*self.double_stance_time+self.single_stance_time), self.single_stance_time, 0, self.delty)
             self.double1_start = pd_leg
 
         else:
             print('discrete timing sucks')
+
+        v_base_x_curr = data.qvel[mj_idx.VEL_X]
+        # print(f'current y-velocity: {v_base_y_curr}')
+        print(f'current x-position: {data.qpos[mj_idx.POS_X]}')
+        v_base_x_desired = 0.0
+        # kv = -0.009 # i think this is the best one so far lol
+        kv = -0.0085 # nvm this is the best one
+
+        pd_leg[0] = pd_leg[0] - kv*(v_base_x_curr - v_base_x_desired)
+        pd_leg[3] = pd_leg[3] - kv*(v_base_x_curr - v_base_x_desired)
+        pd_leg[6] = pd_leg[6] - kv*(v_base_x_curr - v_base_x_desired)
+        pd_leg[9] = pd_leg[9] - kv*(v_base_x_curr - v_base_x_desired)
+
 
         theta_FL = NewtonRaphson(self.pdlast[0:3], pd_leg[0:3], self.qcurr[0:3], self.chain_base_foot_fl, self.chain_base_hip_fl).call_newton_raphson()
         theta_FR = NewtonRaphson(self.pdlast[3:6], pd_leg[3:6], self.qcurr[3:6], self.chain_base_foot_fr, self.chain_base_hip_fr).call_newton_raphson()
@@ -438,7 +445,7 @@ if __name__ == '__main__':
     cam.distance = 2.0
     # cam.elevation = -1
     cam.elevation = -15
-    cam.azimuth = 90
+    cam.azimuth = 180
 
     # turn on reaction forces
     if config['VISUALIZATION']['grf']:
@@ -505,9 +512,8 @@ if __name__ == '__main__':
 
     t0 = 0.5
     T_stab = 2
-    deltx = 0.0
-    z_command = 0.35
-    v_bod = 0.6
+    z_command = 0.37
+    v_bod = 0.5
 
     # main simulation loop
     while (not glfw.window_should_close(window)) and (t_sim < max_sim_time):
@@ -629,17 +635,3 @@ if __name__ == '__main__':
         glfw.poll_events()
 
     print(f"Total simulation time: {t1_real_time - t0_real_time:.3f} seconds")
-
-
-# EXTRAS
-# # lazy fix
-        # if self.cycle == 0:
-        #     pd_leg = self.pdlast
-        #     self.stance1 = pd_leg
-        # else:
-        #     pd_leg = double_stance1(t, self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
-        #     self.stance1 = pd_leg
-
-        # # smarter fix
-        # pd_leg = double_stance1(t, self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
-        # self.stance1 = pd_leg

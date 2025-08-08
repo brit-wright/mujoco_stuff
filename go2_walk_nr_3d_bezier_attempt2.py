@@ -4,14 +4,7 @@
 # Uses a double-stance walking gait
 # Newton-Raphson Method for Inverse Kinematics
 # Calculates z-foot position using Bezier curves
-# No drift handling
-
-# Questions
-# 1. With my current implementation of Bezier curves, the curve never actually reaches the desired max height 
-# Not sure how much of a hard requirement it is but if it is a hard requirement, would it be better to just create 
-# two curves and join them?
-
-# Can work on fixing the weird jumping at the beginning of the gait. I think that's what causes the turning
+# Second attempt at fixing the y-drift issue - corrections during the swing phase
 
 #!/usr/bin/env python3.10
 
@@ -26,7 +19,7 @@ from math import acos, atan2, sqrt, sin, cos
 from definitions.go2_definitions import Mujoco_IDX_go2
 from definitions.KinematicChain import KinematicChain
 from definitions.NewtonRaphson import NewtonRaphson
-from definitions.Bezier2D import Bezier2D
+from definitions.Bezier3D import Bezier3D
 
 from hw5code.TransformHelpers import *
 
@@ -249,6 +242,8 @@ class Trajectory():
         self.p_stable = np.concatenate((self.p_stable_foot_fl, self.p_stable_foot_fr, self.p_stable_foot_rl, self.p_stable_foot_rr))
         self.pdlast = self.p_stable
         self.pd_leg_start = self.pdlast
+
+        self.starty = data.qpos[mj_idx.q_base_pos_idx][1]
         
         return self.p_stable
     
@@ -269,7 +264,7 @@ class Trajectory():
 
             return pd_leg
 
-        def stanceleft_swingright(t_curr, T, start, end):
+        def stanceleft_swingright(t_curr, T, start, end, y_error):
 
             # calculate x_swing
             x_swing = start + (end - start) * (t_curr/T)
@@ -283,17 +278,17 @@ class Trajectory():
             # z_swing = -x_swing * (x_swing - end) * 30
 
             # chose and arbitrary height for step height
-            bez = Bezier2D(start, end, self.p_stable[5], 0.1)
+            bez = Bezier3D(start, end, self.p_stable[5], 0.1, 0.0, y_error)
 
             # need to normalize x to be between 0 and 1
             x_curr = (x_swing - start)/(end - start)
-
-            z_swing = bez.create_bezier(x_curr)
+            y_swing = bez.create_bezier(x_curr)[1]
+            z_swing = bez.create_bezier(x_curr)[-1]
 
             # now we adjust pd_leg based on these values
             pd_leg = self.stance1 + np.array([-x_stance, 0.0, 0.0,
-                                x_swing, 0.0, z_swing,
-                                x_swing, 0.0, z_swing,
+                                x_swing, y_swing, z_swing,
+                                x_swing, y_swing, z_swing,
                                 -x_stance, 0.0, 0.0])
             
 
@@ -317,10 +312,7 @@ class Trajectory():
 
             return pd_leg
 
-        def swingleft_stanceright(t_curr, T, start, end):
-
-            # even though the 8th order gives the nicest foot trajectory, the least error occurs with the
-            # 4th order curve
+        def swingleft_stanceright(t_curr, T, start, end, y_error):
 
             # calculate x_swing
             x_swing = start + (end - start) * (t_curr/T)
@@ -329,37 +321,37 @@ class Trajectory():
             end_stance = end * (1 - (2 * self.double_stance_time)/self.cycle_len)
             x_stance = start + (end_stance - start) * (t_curr/T)
 
-            # calculate z_swing using bezier curve
-            # z_swing = -x_swing * (x_swing - end) * 30
+            # calculate y_swing and z_swing using 3D bezier curve
 
             # chose and arbitrary height for step height
-            bez = Bezier2D(start, end, self.p_stable[2], 0.1)
+            bez = Bezier3D(start, end, self.p_stable[2], 0.1, 0.0, y_error)
 
             # need to normalize x to be between 0 and 1
             x_curr = (x_swing - start)/(end - start)
-
-            z_swing = bez.create_bezier(x_curr)
-            # print(f'z_swing is: {z_swing}')
+            y_swing = bez.create_bezier(x_curr)[1]
+            z_swing = bez.create_bezier(x_curr)[-1]
 
             # now we adjust pd_leg based on these values
-            pd_leg = self.stance2 + np.array([x_swing, 0.0, z_swing,
+            pd_leg = self.stance2 + np.array([x_swing, y_swing, z_swing,
                                               -x_stance, 0.0, 0.0,
                                               -x_stance, 0.0, 0.0,
-                                              x_swing, 0.0, z_swing])
+                                              x_swing, y_swing, z_swing])
             
             return pd_leg
         
+        if self.cycle == 0:
+            
+            # from here we can set the nominal to be the same as the start (no error)
+            self.curry_leftswing = self.starty
+            self.curry_rightswing = self.starty
+    
         if t - self.cycle * self.cycle_len > self.cycle_len:
 
             self.pd_leg_start = self.double1_start
-            # self.pd_leg_start[2::3] = self.p_stable[2::3]
             self.cycle += 1
 
-            if self.cycle == 0:
-                print(f'Iteration {self.cycle}: current base position: {data.qpos[mj_idx.q_base_pos_idx]}')
-
-            if self.cycle % 8 == 0:
-                print(f'Iteration {self.cycle}: current base position: {data.qpos[mj_idx.q_base_pos_idx]}')
+            self.curry_leftswing = self.curr_left
+            self.curry_rightswing = self.curr_right
 
         t = t % self.cycle_len
 
@@ -376,16 +368,22 @@ class Trajectory():
         # single stance for the left leg and swing for the right leg
         elif t < (4/8) * self.cycle_len: # this lasts 3/8th of the time
             # print('flopped here')
-            pd_leg = stanceleft_swingright(t - self.double_stance_time, self.single_stance_time, 0, self.deltx)
+            # calculate the y_drift as the current y position minus the initial y position
+            y_drift = 0.03 * (self.curry_rightswing - self.starty)
+            print(f'y_drift is: {y_drift}')
+            pd_leg = stanceleft_swingright(t - self.double_stance_time, self.single_stance_time, 0, self.deltx, 0.0)
             self.double2_start = pd_leg
+            self.curr_right = data.qpos[mj_idx.q_base_pos_idx][1]
 
         elif t < (5/8) * self.cycle_len:
             pd_leg = double_stance2(t - (self.double_stance_time + self.single_stance_time), self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
             self.stance2 = pd_leg
 
         elif t < self.cycle_len:
-            pd_leg = swingleft_stanceright(t - (2*self.double_stance_time+self.single_stance_time), self.single_stance_time, 0, self.deltx)
+            y_drift = 0.03 * (self.curry_leftswing - self.starty)
+            pd_leg = swingleft_stanceright(t - (2*self.double_stance_time+self.single_stance_time), self.single_stance_time, 0, self.deltx, 0.0)
             self.double1_start = pd_leg
+            self.curr_left = data.qpos[mj_idx.q_base_pos_idx][1]
 
         else:
             print('discrete timing sucks')
@@ -507,7 +505,7 @@ if __name__ == '__main__':
     T_stab = 2
     deltx = 0.0
     z_command = 0.35
-    v_bod = 0.6
+    v_bod = 0.4
 
     # main simulation loop
     while (not glfw.window_should_close(window)) and (t_sim < max_sim_time):

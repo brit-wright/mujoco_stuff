@@ -1,17 +1,10 @@
 # Features
-# WALKING FORWARD
+# WALKING BACKWARDS
 # Starts from some user-defined stable configuration
 # Uses a double-stance walking gait
 # Newton-Raphson Method for Inverse Kinematics
 # Calculates z-foot position using Bezier curves
-# No drift handling
-
-# Questions
-# 1. With my current implementation of Bezier curves, the curve never actually reaches the desired max height 
-# Not sure how much of a hard requirement it is but if it is a hard requirement, would it be better to just create 
-# two curves and join them?
-
-# Can work on fixing the weird jumping at the beginning of the gait. I think that's what causes the turning
+# Drifting fix applied using Raibert Heuristic
 
 #!/usr/bin/env python3.10
 
@@ -147,19 +140,32 @@ class Trajectory():
 
         # new stance positioning
         new_deltx = (self.deltx - (self.deltx * (self.double_stance_time/self.cycle_len))) * 1/2
+
+        # p0_FLx = self.p0_foot_fl[0]
+        # pf_FLx = self.p0_thigh_fl[0] + self.deltx/2
+
+
+        # p0_FRx = self.p0_foot_fr[0]
+        # pf_FRx = self.p0_thigh_fr[0] - self.deltx/2
+
+        # p0_RLx = self.p0_foot_rl[0]
+        # pf_RLx = self.p0_thigh_rl[0] - self.deltx/2
+
+        # p0_RRx = self.p0_foot_rr[0]
+        # pf_RRx = self.p0_thigh_rr[0] + self.deltx/2
         
         p0_FLx = self.p0_foot_fl[0]
-        pf_FLx = self.p0_thigh_fl[0] + new_deltx
+        pf_FLx = self.p0_thigh_fl[0] - new_deltx
 
 
         p0_FRx = self.p0_foot_fr[0]
-        pf_FRx = self.p0_thigh_fr[0] - new_deltx
+        pf_FRx = self.p0_thigh_fr[0] + new_deltx
 
         p0_RLx = self.p0_foot_rl[0]
-        pf_RLx = self.p0_thigh_rl[0] - new_deltx
+        pf_RLx = self.p0_thigh_rl[0] + new_deltx
 
         p0_RRx = self.p0_foot_rr[0]
-        pf_RRx = self.p0_thigh_rr[0] + new_deltx
+        pf_RRx = self.p0_thigh_rr[0] - new_deltx
 
         # the desired leg z-position is just the negative of the z command
         p0_FLz = self.p0_foot_fl[2]
@@ -262,10 +268,10 @@ class Trajectory():
 
             # this is applied to both legs, both legs move backward
 
-            pd_leg = self.pd_leg_start + np.array([-x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,])
+            pd_leg = self.pd_leg_start + np.array([x_curr, 0.0, 0.0,
+                                                   x_curr, 0.0, 0.0,
+                                                   x_curr, 0.0, 0.0,
+                                                   x_curr, 0.0, 0.0,])
 
             return pd_leg
 
@@ -291,10 +297,10 @@ class Trajectory():
             z_swing = bez.create_bezier(x_curr)
 
             # now we adjust pd_leg based on these values
-            pd_leg = self.stance1 + np.array([-x_stance, 0.0, 0.0,
-                                x_swing, 0.0, z_swing,
-                                x_swing, 0.0, z_swing,
-                                -x_stance, 0.0, 0.0])
+            pd_leg = self.stance1 + np.array([x_stance, 0.0, 0.0,
+                                              -x_swing, 0.0, z_swing,
+                                              -x_swing, 0.0, z_swing,
+                                              x_stance, 0.0, 0.0])
             
 
             if self.cycle == 2:
@@ -310,10 +316,10 @@ class Trajectory():
 
             # this is applied to both legs, both legs move backward
 
-            pd_leg = self.double2_start + np.array([-x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,
-                                                   -x_curr, 0.0, 0.0,])
+            pd_leg = self.double2_start + np.array([x_curr, 0.0, 0.0,
+                                                    x_curr, 0.0, 0.0,
+                                                    x_curr, 0.0, 0.0,
+                                                    x_curr, 0.0, 0.0,])
 
             return pd_leg
 
@@ -342,28 +348,42 @@ class Trajectory():
             # print(f'z_swing is: {z_swing}')
 
             # now we adjust pd_leg based on these values
-            pd_leg = self.stance2 + np.array([x_swing, 0.0, z_swing,
-                                              -x_stance, 0.0, 0.0,
-                                              -x_stance, 0.0, 0.0,
-                                              x_swing, 0.0, z_swing])
+            pd_leg = self.stance2 + np.array([-x_swing, 0.0, z_swing,
+                                              x_stance, 0.0, 0.0,
+                                              x_stance, 0.0, 0.0,
+                                              -x_swing, 0.0, z_swing])
             
             return pd_leg
         
         if t - self.cycle * self.cycle_len > self.cycle_len:
 
+            # print(f'checking x-positions: {self.pdlast[0]}, {self.pdlast[3]}, {self.pdlast[6]}, {self.pdlast[9]}')
             self.pd_leg_start = self.double1_start
-            # self.pd_leg_start[2::3] = self.p_stable[2::3]
+            self.pd_leg_start[2::3] = self.p_stable[2::3]
             self.cycle += 1
 
-            if self.cycle == 0:
-                print(f'Iteration {self.cycle}: current base position: {data.qpos[mj_idx.q_base_pos_idx]}')
+            # if self.cycle % 8 == 0:
+            #     print('stop here')
 
-            if self.cycle % 8 == 0:
-                print(f'Iteration {self.cycle}: current base position: {data.qpos[mj_idx.q_base_pos_idx]}')
+            # if self.cycle == 3:
+            #     print(f'x: {self.x_list}')
+            #     print(f'z: {self.z_list}')
 
         t = t % self.cycle_len
 
         if t < self.cycle_len/8: # this lasts for 1/8th of the period
+
+            # # lazy fix
+            # if self.cycle == 0:
+            #     pd_leg = self.pdlast
+            #     self.stance1 = pd_leg
+            # else:
+            #     pd_leg = double_stance1(t, self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
+            #     self.stance1 = pd_leg
+
+            # # smarter fix
+            # pd_leg = double_stance1(t, self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
+            # self.stance1 = pd_leg
 
             # checking this method - this method seems to be the best but i don't know why :/
             if self.cycle == 0:
@@ -389,6 +409,18 @@ class Trajectory():
 
         else:
             print('discrete timing sucks')
+
+        v_base_y_curr = data.qvel[mj_idx.VEL_Y]
+        # print(f'current y-velocity: {v_base_y_curr}')
+        print(f'current y-position: {data.qpos[mj_idx.POS_Y]}')
+        v_base_y_desired = 0.0
+        # kv = -0.009 # i think this is the best one so far lol
+        kv = -0.05 # nvm this is the best one
+
+        pd_leg[1] = pd_leg[1] - kv*(v_base_y_curr - v_base_y_desired)
+        pd_leg[4] = pd_leg[4] - kv*(v_base_y_curr - v_base_y_desired)
+        pd_leg[7] = pd_leg[7] - kv*(v_base_y_curr - v_base_y_desired)
+        pd_leg[10] = pd_leg[10] - kv*(v_base_y_curr - v_base_y_desired)
 
         theta_FL = NewtonRaphson(self.pdlast[0:3], pd_leg[0:3], self.qcurr[0:3], self.chain_base_foot_fl, self.chain_base_hip_fl).call_newton_raphson()
         theta_FR = NewtonRaphson(self.pdlast[3:6], pd_leg[3:6], self.qcurr[3:6], self.chain_base_foot_fr, self.chain_base_hip_fr).call_newton_raphson()
@@ -629,17 +661,3 @@ if __name__ == '__main__':
         glfw.poll_events()
 
     print(f"Total simulation time: {t1_real_time - t0_real_time:.3f} seconds")
-
-
-# EXTRAS
-# # lazy fix
-        # if self.cycle == 0:
-        #     pd_leg = self.pdlast
-        #     self.stance1 = pd_leg
-        # else:
-        #     pd_leg = double_stance1(t, self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
-        #     self.stance1 = pd_leg
-
-        # # smarter fix
-        # pd_leg = double_stance1(t, self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
-        # self.stance1 = pd_leg
