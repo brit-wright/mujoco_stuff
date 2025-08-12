@@ -1,0 +1,12 @@
+<mujoco model="scene">
+
+    <!-- import the unitree go2 -->
+    <include file="go2.xml"/>
+
+    <!-- create the environment which contains the obstacles -->
+    <worldbody>
+        <geom name="example_obstacle1" type="box" size="0.015 0.015 0.015" pos="2 3 0.015" rgba="1 0 0 1"/>
+        <geom name="example_obstacle2" type="box" size="0.015 0.015 0.015" pos="4 7 0.015" rgba="1 0 0 1"/>
+        <geom name="example_obstacle3" type="box" size="0.015 0.015 0.015" pos="10 12 0.015" rgba="1 0 0 1"/>
+    </worldbody>
+</mujoco>
