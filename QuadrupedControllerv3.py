@@ -127,11 +127,15 @@ class QuadrupedController:
 
         self.r = sqrt((0.1934)**2 + (0.0955+0.0465)**2)
 
-        self.all_four = False
+        self.all_four_turn = False
+        self.all_four_walk = False
         self.is_stable = False
 
         self.zcomm = 0.35
         self.mode = ''
+
+        self.T_stab = 0.5
+        self.T_reset = 0.5
 
     # jointnames helper function
     def jointnames(self):
@@ -531,23 +535,24 @@ class QuadrupedController:
             else:
                 pd_leg = double_stance1(t, self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
                 self.stance1 = pd_leg
+            self.all_four_walk = True
 
         # single stance for the left leg and swing for the right leg
         elif t < (4/8) * self.cycle_len: # this lasts 3/8th of the time
             # print('flopped here')
             pd_leg = stanceleft_swingright(t - self.double_stance_time, self.single_stance_time, 0, self.deltx)
             self.double2_start = pd_leg
+            self.all_four_walk = False
 
         elif t < (5/8) * self.cycle_len:
             pd_leg = double_stance2(t - (self.double_stance_time + self.single_stance_time), self.double_stance_time, 0, self.deltx * (self.double_stance_time/self.cycle_len))
             self.stance2 = pd_leg
+            self.all_four_walk = True
 
         elif t < self.cycle_len:
             pd_leg = swingleft_stanceright(t - (2*self.double_stance_time+self.single_stance_time), self.single_stance_time, 0, self.deltx)
             self.double1_start = pd_leg
-
-        else:
-            print('discrete timing sucks')
+            self.all_four_walk = False
 
         rot_mat = np.array([[cos(yaw_error), -sin(yaw_error), 0.0],
                             [sin(yaw_error), cos(yaw_error), 0.0],
@@ -731,26 +736,26 @@ class QuadrupedController:
             else:
                 pd_leg = double_stance1(t, self.double_stance_time, 0, self.delta_theta * (self.double_stance_time/self.cycle_len))
                 self.stance1 = pd_leg
+            self.all_four_turn = True
         
         elif t < (self.double_stance_time + self.single_stance_time):
 
             # swing the left leg, stance the right leg
             pd_leg = swingleft_stanceright(t - self.double_stance_time, self.single_stance_time, 0, self.delta_theta)
             self.double2_start = pd_leg
+            self.all_four_turn = False
 
         elif t < (2*self.double_stance_time + self.single_stance_time):
 
-            # both stance, re-adjust th ebody position
+            # both stance, re-adjust the body position
             pd_leg = double_stance2(t - (self.double_stance_time + self.single_stance_time), self.double_stance_time, 0, self.delta_theta * (self.double_stance_time/self.cycle_len))
             self.stance2 = pd_leg
+            self.all_four_turn = True
         
         elif t < self.cycle_len:
             pd_leg = swingright_stanceleft(t - (2*self.double_stance_time+self.single_stance_time), self.single_stance_time, 0, self.delta_theta)
             self.double1_start = pd_leg
-
-        else:
-            pd_leg = self.pdlast
-
+            self.all_four_turn = False
 
         theta_FL = NewtonRaphson(self.p_stable[0:3], pd_leg[0:3], self.qstable[0:3], self.chain_base_foot_fl, self.chain_base_hip_fl).call_newton_raphson()
         theta_FR = NewtonRaphson(self.p_stable[3:6], pd_leg[3:6], self.qstable[3:6], self.chain_base_foot_fr, self.chain_base_hip_fr).call_newton_raphson()
@@ -898,26 +903,26 @@ class QuadrupedController:
             else:
                 pd_leg = double_stance1(t, self.double_stance_time, 0, self.delta_theta * (self.double_stance_time/self.cycle_len))
                 self.stance1 = pd_leg
-            self.all_four = True
+            self.all_four_turn = True
         
         elif t < (self.double_stance_time + self.single_stance_time):
 
             # swing the left leg, stance the right leg
             pd_leg = swingleft_stanceright(t - self.double_stance_time, self.single_stance_time, 0, self.delta_theta)
             self.double2_start = pd_leg
-            self.all_four = False
+            self.all_four_turn = False
 
         elif t < (2*self.double_stance_time + self.single_stance_time):
 
             # both stance, re-adjust th ebody position
             pd_leg = double_stance2(t - (self.double_stance_time + self.single_stance_time), self.double_stance_time, 0, self.delta_theta * (self.double_stance_time/self.cycle_len))
             self.stance2 = pd_leg
-            self.all_four = True
+            self.all_four_turn = True
         
         elif t < self.cycle_len:
             pd_leg = swingright_stanceleft(t - (2*self.double_stance_time+self.single_stance_time), self.single_stance_time, 0, self.delta_theta)
             self.double1_start = pd_leg
-            self.all_four = False
+            self.all_four_turn = False
 
 
         theta_FL = NewtonRaphson(self.p_stable[0:3], pd_leg[0:3], self.qstable[0:3], self.chain_base_foot_fl, self.chain_base_hip_fl).call_newton_raphson()
@@ -1038,72 +1043,98 @@ class QuadrupedController:
 
         return self.qreset
     
-    def walker(self, t, w_command, v_command, angle_error):
+    def walker(self, t, w_command, v_command, angle_error, distance_error):
 
         print(f'command: v: {v_command}, w: {w_command}')
+        goal_found = False
         
         # start by checking whether the mode is turn or forward
         if abs(angle_error) > 1e-1 and self.mode=='':
             self.mode = 'turning'
-        elif abs(angle_error) < 1e-1 and self.all_four == False and self.mode=='':
+        elif abs(angle_error) < 1e-1 and self.all_four_turn == False and self.mode=='':
             self.mode = 'turning_fin'
-        elif abs(angle_error) < 1e-1 and self.all_four == True:
+        elif abs(angle_error) < 1e-1 and self.all_four_turn == True:
             self.mode = 'forward'
+        elif abs(distance_error) < 2e-1 and self.all_four_walk == False:
+            self.mode = 'walking_fin'
+        elif abs(distance_error) < 2e-1 and self.all_four_walk == True:
+            self.mode = 'reset'
 
         if self.mode == 'turning':
 
             print('in turning mode')
             if self.is_stable == False:
-
+                print('stabilizing')
                 if w_command < 0.0:
-                    q_joints = self.stabilize_turn_clockwise(t, 0.5, self.zcomm)
+                    self.q_joints = self.stabilize_turn_clockwise(t, self.T_stab, self.zcomm)
                 if w_command > 0.0:
-                    q_joints = self.stabilize_turn_counterclockwise(t, 0.5, self.zcomm)
+                    self.q_joints = self.stabilize_turn_counterclockwise(t, self.T_stab, self.zcomm)
             
             # get the sign of the command
             else:
+                print('actually turning')
                 if w_command < 0.0:
-                    q_joints = self.turn_clockwise(t-0.5, abs(w_command))
+                    self.q_joints = self.turn_clockwise(t-self.T_stab, abs(w_command))
                 elif w_command > 0.0:
-                    q_joints = self.turn_counterclockwise(t-0.5, w_command)
+                    self.q_joints = self.turn_counterclockwise(t-self.T_stab, w_command)
                 self.t_turn_fin = t
 
         elif self.mode == 'turning_fin':
             print('turning, putting both feet on the ground')
             if w_command < 0.0:
-                q_joints = self.turn_clockwise(t-0.5, 0.2)
+                self.q_joints = self.turn_clockwise(t-self.T_stab, 0.2)
             elif w_command > 0.0:
-                q_joints = self.turn_counterclockwise(t-0.5, 0.2)
+                self.q_joints = self.turn_counterclockwise(t-self.T_stab, 0.2)
             self.t_turn_fin = t
 
         elif self.mode == 'forward':
             print('in forward mode')
 
             # start by resetting the values into the nominal standing position
-            if t > self.t_turn_fin and t < (self.t_turn_fin + 0.5):
+            if t > self.t_turn_fin and t < (self.t_turn_fin + self.T_reset):
                 print('resetting bot')
-                q_joints = self.reset(t-self.t_turn_fin, 0.5)
+                self.q_joints = self.reset(t-self.t_turn_fin, self.T_reset)
 
             # next enter front walk stabilization mode
-            elif t > (self.t_turn_fin + 0.5) and t < (self.t_turn_fin + 0.5 + 0.5):
+            elif t > (self.t_turn_fin + self.T_reset) and t < (self.t_turn_fin + self.T_reset + self.T_stab):
                 print('stabilizing for forward gait')
-                t_curr = t - (self.t_turn_fin + 0.5)
-                q_joints = self.stabilize_forward(t_curr, 0.5, self.zcomm, v_command)
+                t_curr = t - (self.t_turn_fin + self.T_reset)
+                self.q_joints = self.stabilize_forward(t_curr, self.T_stab, self.zcomm, v_command)
 
             # next enter walk mode
             else:
                 print('walking forward')
-                t_curr = t - (self.t_turn_fin + 0.5 + 0.5)
-                q_joints = self.walk_forward(t_curr, v_command, angle_error)
+                t_curr = t - (self.t_turn_fin + self.T_reset + self.T_stab)
+                self.q_joints = self.walk_forward(t_curr, v_command, angle_error)
+                self.t_walk_fin = t
 
-        
+        elif self.mode == 'walking_fin':
+            print('walking, putting both feet on the ground')
+            t_curr = t - (self.t_turn_fin + self.T_reset + self.T_stab)
+            self.q_joints = self.walk_forward(t_curr, v_command, angle_error)
+            self.t_walk_fin = t
 
-        return q_joints
-
-        
+        elif self.mode == 'reset':
             
+            if t > self.t_walk_fin and t < (self.t_walk_fin + self.T_reset):
+                print('resetting from forward gait')
+                self.q_joints = self.reset(t-self.t_walk_fin, self.T_reset)
 
-        
+            else:
+                print(f'goal has been found')
+                goal_found = True
+                self.all_four_turn = False
+                self.all_four_walk = False
+                self.mode = ''
+                self.is_stable = False
+
+        return self.q_joints, goal_found
+
+# things to include in the controller
+# some criterion for stopping the current gait -> the epsilon ball and the location of the base wrt the epsilon ball
+# some looping logic -> loops over each goal position, performing the same gait steps
+# looped gait steps: 1. stabilize-turn, turning, resetting, stabilize-forward, walk-forward, reset
+# also remember to reset the cycle numbers at the end of each gait loop              
 
 if __name__=="__main__":
 
