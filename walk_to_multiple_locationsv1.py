@@ -126,14 +126,14 @@ if __name__ == '__main__':
     z_command = 0.35
     v_bod = 0.6
 
-    goal_pos = [[2, 3], [4, 7], [18, 10]]
+    goal_pos = [[2, 3], [4, 7], [10, 12]]
 
     kx = 0.1
     ky = 0.1
     k_theta = 1.0
     kmag = 0.5
 
-    forward_max = 0.5
+    forward_max = 0.6
     turn_max = 0.8
 
     print(f'data is {data}')
@@ -147,8 +147,9 @@ if __name__ == '__main__':
     checkpoint_num = 0
 
     goal_found = False
+    recovery_mode = False
 
-    t_goal = 0
+    t_restart = 0
 
     # main simulation loop
     while (not glfw.window_should_close(window)) and (t_sim < max_sim_time):
@@ -183,7 +184,7 @@ if __name__ == '__main__':
                 # Velocity-based Feedback Control
                 print(f'angles: bot: {theta_curr}, angle-between: {theta_desired}')
                 wz_command = k_theta * (theta_desired - theta_curr)
-                print(f'angle error is {theta_desired - theta_curr}')
+                # print(f'angle error is {theta_desired - theta_curr}')
 
                 angle_error = theta_desired - theta_curr
                 distance_error = sqrt((goal_pos[checkpoint_num][0] - p_curr[0])**2 + (goal_pos[checkpoint_num][1] - p_curr[1])**2)
@@ -196,20 +197,28 @@ if __name__ == '__main__':
                 if wz_command > turn_max:
                     wz_command = turn_max
 
-                t_sim2 = t_sim - t_goal
+                t_sim2 = t_sim - t_restart
+
+                if checkpoint_num > 0:
+                    T_stand = 0.0
 
                 if t_sim2 <= T_stand:
                     print('standing')
                     q_joints_des = robot.stand()
                 else:
                     t_curr = t_sim2 - T_stand
-                    q_joints_des, goal_found = robot.walker(t_curr, wz_command, vmag_command, angle_error, distance_error)
+                    q_joints_des, goal_found, recovery_mode = robot.walker(t_curr, wz_command, vmag_command, angle_error, distance_error)
 
                 if goal_found == True:
                     print('Goal found')
                     checkpoint_num += 1
                     goal_found = False
-                    t_goal = t_sim
+                    t_restart = t_sim
+
+                elif recovery_mode == True:
+                    print('Angular error too large: entering recovery mode')
+                    t_restart = t_sim
+                    recovery_mode = False
 
                 # compute torque from PID
                 u = -kp * (q_joints - q_joints_des) - kd * (v_joints - v_joints_des)

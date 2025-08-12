@@ -134,8 +134,10 @@ class QuadrupedController:
         self.zcomm = 0.35
         self.mode = ''
 
-        self.T_stab = 0.5
-        self.T_reset = 0.5
+        self.T_stab = 0.35
+        self.T_reset = 0.35
+
+        self.recovery_mode = False
 
     # jointnames helper function
     def jointnames(self):
@@ -568,15 +570,17 @@ class QuadrupedController:
         # print(f'current y-position: {self.data.qvel[self.mj_idx.POS_Y]}')
         v_base_y_desired = 0.0
 
-        if vmag_command <= 0.5 and vmag_command >= 0.4:
-            kv = 0.00010
-        elif vmag_command < 0.4:
-            kv = 0.00008
+        # if vmag_command <= 0.5 and vmag_command >= 0.4:
+        #     kv = 0.00010
+        # elif vmag_command < 0.4:
+        #     kv = 0.00008
+
+        # kv = 0.00009 # currently using this w/ recovery for vx = 0.5
 
         # kv = 0.00015 # works for vx = 0.5
         # kv = 0.00010 # works better for vx = 0.5
         # kv = 0.00008
-        # kv = 0.00018 # works for vx = 0.6
+        kv = -0.00008 # works for vx = 0.6
         # kv = 0.00021 # works for vx = 0.7
 
         pd_leg[1] = pd_leg[1] - kv*(v_base_y_curr - v_base_y_desired)
@@ -1046,19 +1050,37 @@ class QuadrupedController:
     def walker(self, t, w_command, v_command, angle_error, distance_error):
 
         print(f'command: v: {v_command}, w: {w_command}')
+        print(f'errors: angle_error: {angle_error}, distance_error: {distance_error}')
         goal_found = False
-        
-        # start by checking whether the mode is turn or forward
-        if abs(angle_error) > 1e-1 and self.mode=='':
-            self.mode = 'turning'
-        elif abs(angle_error) < 1e-1 and self.all_four_turn == False and self.mode=='':
-            self.mode = 'turning_fin'
-        elif abs(angle_error) < 1e-1 and self.all_four_turn == True:
-            self.mode = 'forward'
-        elif abs(distance_error) < 2e-1 and self.all_four_walk == False:
-            self.mode = 'walking_fin'
-        elif abs(distance_error) < 2e-1 and self.all_four_walk == True:
-            self.mode = 'reset'
+        self.recovery_mode = False
+
+        if abs(angle_error) > 0.7 and (self.mode == 'forward' or self.mode == 'walking_fin_recover'):
+            print('entering recovery mode')
+            if self.all_four_walk == True:
+                # send the robot back to turning mode and reset other controls
+                self.mode = ''
+                self.all_four_turn = False
+                self.all_four_turn = False
+                self.is_stable = False
+                self.recovery_mode = True
+
+            elif self.all_four_walk == False:
+                self.mode = 'walking_fin_recover'
+
+            
+
+        else:
+            # start by checking whether the mode is turn or forward
+            if abs(angle_error) > 1e-1 and self.mode=='':
+                self.mode = 'turning'
+            elif abs(angle_error) < 1e-1 and self.all_four_turn == False and self.mode=='':
+                self.mode = 'turning_fin'
+            elif abs(angle_error) < 1e-1 and self.all_four_turn == True:
+                self.mode = 'forward'
+            elif abs(distance_error) < 1.5e-1 and self.all_four_walk == False:
+                self.mode = 'walking_fin'
+            elif abs(distance_error) < 1.5e-1 and self.all_four_walk == True:
+                self.mode = 'reset'
 
         if self.mode == 'turning':
 
@@ -1082,9 +1104,9 @@ class QuadrupedController:
         elif self.mode == 'turning_fin':
             print('turning, putting both feet on the ground')
             if w_command < 0.0:
-                self.q_joints = self.turn_clockwise(t-self.T_stab, 0.2)
+                self.q_joints = self.turn_clockwise(t-self.T_stab, abs(w_command))
             elif w_command > 0.0:
-                self.q_joints = self.turn_counterclockwise(t-self.T_stab, 0.2)
+                self.q_joints = self.turn_counterclockwise(t-self.T_stab, w_command)
             self.t_turn_fin = t
 
         elif self.mode == 'forward':
@@ -1127,14 +1149,21 @@ class QuadrupedController:
                 self.all_four_walk = False
                 self.mode = ''
                 self.is_stable = False
+                self.recovery_mode = False
 
-        return self.q_joints, goal_found
+        elif self.mode == 'walking_fin_recover':
+            print('recovery: putting all feet on ground')
+            t_curr = t - (self.t_turn_fin + self.T_reset + self.T_stab)
+            self.q_joints = self.walk_forward(t_curr, v_command, angle_error)
+
+        return self.q_joints, goal_found, self.recovery_mode
 
 # things to include in the controller
 # some criterion for stopping the current gait -> the epsilon ball and the location of the base wrt the epsilon ball
 # some looping logic -> loops over each goal position, performing the same gait steps
 # looped gait steps: 1. stabilize-turn, turning, resetting, stabilize-forward, walk-forward, reset
-# also remember to reset the cycle numbers at the end of each gait loop              
+# also remember to reset the cycle numbers at the end of each gait loop    
+# maybe make a second constraint where if the angular error is too large, we re-enter turn mode lol          
 
 if __name__=="__main__":
 
