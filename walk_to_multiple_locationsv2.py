@@ -18,13 +18,17 @@ import time
 from math import acos, atan2, sqrt, sin, cos
 
 from definitions.go2_definitions import Mujoco_IDX_go2
-from QuadrupedControllerv3 import QuadrupedController
+# from QuadrupedControllerv4 import QuadrupedController
+from QuadrupedControllerDebug import QuadrupedController
 from hw5code.TransformHelpers import *
 # from Mujoco_Example.utils import mujoco_path_visualizer as mjVis
-import mujoco_path_visualizer as mjVis
+import mujoco_path_visualizer as mjPath
 
 def quaternion_to_yaw(w, x, y, z):
     return atan2(2*(w*z + x*y), 1 - 2*(y**2 + z**2))
+
+def normalize_angle(angle):
+    return (angle + np.pi) % (2 * np.pi) - np.pi
 
 # main function to run the system
 if __name__ == '__main__':
@@ -37,7 +41,8 @@ if __name__ == '__main__':
 
     # load the mujoco model
     # mj_model_path = "./models/go2/scene.xml"
-    mj_model_path = mjVis.new_xml_path
+
+    mj_model_path, path_nodes = mjPath.main()
     model = mujoco.MjModel.from_xml_path(mj_model_path)
     data = mujoco.MjData(model)
 
@@ -83,8 +88,8 @@ if __name__ == '__main__':
     data.qvel = np.zeros(model.nv)
     # data.qpos[mj_idx.q_base_pos_idx[0]] = config['INITIAL_STATE']['px']
     # data.qpos[mj_idx.q_base_pos_idx[1]] = config['INITIAL_STATE']['py']
-    data.qpos[mj_idx.q_base_pos_idx[0]] = mjVis.path_nodes[0][0]
-    data.qpos[mj_idx.q_base_pos_idx[1]] = mjVis.path_nodes[0][1] - 0.2
+    data.qpos[mj_idx.q_base_pos_idx[0]] = path_nodes[0][0]
+    data.qpos[mj_idx.q_base_pos_idx[1]] = path_nodes[0][1]
     data.qpos[mj_idx.q_base_pos_idx[2]] = config['INITIAL_STATE']['pz']
     data.qpos[mj_idx.q_base_quat_idx[0]] = 1.0
     data.qpos[mj_idx.q_joint_idx] = q0_joint
@@ -132,14 +137,14 @@ if __name__ == '__main__':
     z_command = 0.35
     v_bod = 0.6
 
-    goal_pos = mjVis.path_nodes
+    goal_pos = path_nodes
 
     kx = 0.1
     ky = 0.1
     k_theta = 1.0
     kmag = 0.5
 
-    forward_max = 0.6
+    forward_max = 0.5
     turn_max = 0.8
 
     print(f'data is {data}')
@@ -150,7 +155,7 @@ if __name__ == '__main__':
     move_mode = ''
     ready = False
 
-    checkpoint_num = 0
+    checkpoint_num = 1
 
     goal_found = False
     recovery_mode = False
@@ -187,25 +192,29 @@ if __name__ == '__main__':
 
                 theta_desired = atan2(goal_pos[checkpoint_num][1] - p_curr[1], goal_pos[checkpoint_num][0] - p_curr[0])
 
+                angle_error = normalize_angle(theta_desired - theta_curr)
+
                 # Velocity-based Feedback Control
                 print(f'angles: bot: {theta_curr}, angle-between: {theta_desired}')
-                wz_command = k_theta * (theta_desired - theta_curr)
+                wz_command = k_theta * angle_error
                 # print(f'angle error is {theta_desired - theta_curr}')
 
-                angle_error = theta_desired - theta_curr
+                
                 distance_error = sqrt((goal_pos[checkpoint_num][0] - p_curr[0])**2 + (goal_pos[checkpoint_num][1] - p_curr[1])**2)
 
                 vmag_command = kmag * distance_error
 
                 if vmag_command > forward_max:
                     vmag_command = forward_max
+                elif vmag_command < 0.2:
+                    vmag_command = 0.2
 
                 if wz_command > turn_max:
                     wz_command = turn_max
 
                 t_sim2 = t_sim - t_restart
 
-                if checkpoint_num > 0:
+                if t_restart != 0:
                     T_stand = 0.0
 
                 if t_sim2 <= T_stand:

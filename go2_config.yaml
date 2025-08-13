@@ -41,7 +41,7 @@ INITIAL_STATE:
 SIM:
 
     # maximum simulation time [s]
-    t_max: 1000.0         # maximum simulation time
+    t_max: 180.0         # maximum simulation time
 
     # rate for rendering the graphics
     hz_render: 50.0     # GLFW render rate used to be 50.0 Hz

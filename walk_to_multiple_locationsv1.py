@@ -1,10 +1,11 @@
 # Features
-# WALKING FORWARD
+# FULL CONTROL, WALKS TO SPECIFIED CHECKPOINTS
+# Includes a recovery mode in case the angular error is too large
 # Starts from some user-defined stable configuration
 # Uses a double-stance walking gait
 # Newton-Raphson Method for Inverse Kinematics
 # Calculates z-foot position using Bezier curves
-# Using Raibert's method to get rid of y-drift
+# Uses Raibert's method (with fixed coefficients) to get rid of y-drift
 
 #!/usr/bin/env python3.10
 
@@ -17,7 +18,7 @@ import time
 from math import acos, atan2, sqrt, sin, cos
 
 from definitions.go2_definitions import Mujoco_IDX_go2
-from QuadrupedControllerv3 import QuadrupedController
+from QuadrupedControllerDebug import QuadrupedController
 from hw5code.TransformHelpers import *
 
 
