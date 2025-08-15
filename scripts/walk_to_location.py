@@ -24,6 +24,9 @@ from hw5code.TransformHelpers import *
 def quaternion_to_yaw(w, x, y, z):
     return atan2(2*(w*z + x*y), 1 - 2*(y**2 + z**2))
 
+def normalize_angle(angle):
+    return (angle + np.pi) % (2 * np.pi) - np.pi
+
 # main function to run the system
 if __name__ == '__main__':
 
@@ -50,10 +53,10 @@ if __name__ == '__main__':
     # create camera to render the scene
     cam = mujoco.MjvCamera()
     opt = mujoco.MjvOption()
-    cam.distance = 2.0
+    cam.distance = 3.0
     # cam.elevation = -1
-    cam.elevation = -15
-    cam.azimuth = 90
+    cam.elevation = -35
+    cam.azimuth = 270
 
     # turn on reaction forces
     if config['VISUALIZATION']['grf']:
@@ -118,7 +121,7 @@ if __name__ == '__main__':
 
     q_joints_des = np.zeros_like(q_joints)
 
-    t0 = 0.5
+    T_stand = 0.5
     T_stab = 1
     T_run = 5
     T_reset = 1
@@ -128,12 +131,18 @@ if __name__ == '__main__':
 
     goal_pos = [5, 15]
 
-    kx = 0.1
-    ky = 0.0
-    k_theta = 0.00001
+    k_mag = 1.0
+    k_theta = 1.0
+    k_x = 1.0
+    k_y = 1.0
 
+    # forward_max = 0.5
+    # turn_max = 0.8
 
-    print(f'data is {data}')
+    forward_max = 0.5
+    turn_max = 0.5
+
+    gait_start = True
 
     # main simulation loop
     while (not glfw.window_should_close(window)) and (t_sim < max_sim_time):
@@ -143,7 +152,7 @@ if __name__ == '__main__':
         # t_sim is the total/running simulation
         while (t_sim - t0_sim) < (dt_render):
 
-            print(f'Current x position is: {data.qpos[mj_idx.POS_X]}')
+            # print(f'Current x position is: {data.qpos[mj_idx.POS_X]}')
 
             t1_wall = time.time()
             t_sim = data.time
@@ -161,39 +170,63 @@ if __name__ == '__main__':
                 v_joints_des = np.zeros_like(v_joints)
 
                 p_curr = q[mj_idx.q_base_pos_idx]
+
+
                 theta_curr = quaternion_to_yaw(q[mj_idx.QUAT_W], q[mj_idx.QUAT_X], q[mj_idx.QUAT_Y], q[mj_idx.QUAT_Z])
                 theta_desired = atan2(goal_pos[1] - p_curr[1], goal_pos[0] - p_curr[0])
+                angle_error = normalize_angle(theta_desired - theta_curr)
+                wz_command = k_theta * angle_error
 
-                # Velocity-based Feedback Control
+                x_error = goal_pos[0] - p_curr[0]
+                vx_command = k_x * x_error
 
-                wz_command = k_theta * (theta_desired - theta_curr)
-                vx_command = kx * (goal_pos[0] - p_curr[0])
-                vy_command = ky * (goal_pos[1] - p_curr[1])
+                y_error = goal_pos[1] - p_curr[1]
+                vy_command = k_y * y_error
 
-                if t_sim <= t0:
+                # clipping the values
+                if wz_command >= 0.0:
+                    wz_command = np.clip(wz_command, 0.1, turn_max)
+                elif wz_command < 0.0:
+                    wz_command = np.clip(wz_command, -0.1, -turn_max)
+
+
+                vx_command = np.clip(vx_command, 0.2, forward_max)
+                vy_command = np.clip(vy_command, 0.2, forward_max)
+
+                commands = np.array([vx_command, 0.0, wz_command])
+
+                errors = np.array([x_error, y_error, angle_error])
+
+                if t_sim <= T_stand:
+                    # print('Standing')
                     q_joints_des = robot.stand()
                 
-                elif t_sim > t0 and (t_sim - t0) <= T_stab:
-
-                    t_stabx = t_sim - t0
-                    # q_joints_des = robot.stand()
-                    q_joints_des = robot.stabilize_forward(t_stabx, T_stab, z_command, v_bod)
-                    robot.p_stable = robot.choose_gait_start()
-
-                elif t_sim > (t0 + T_stab): #and (t_sim - t0 - T_stab) <= T_run:
+                else:
+                    t_curr = t_sim - T_stand
+                    q_joints_des = robot.walker(t_curr, commands, errors, theta_curr, gait_start)
                 
-                    # stop the motion
-
-                    t_curr = t_sim - (t0 + T_stab)
-
-                    q_joints_des = robot.walk(t_curr, vx_command, vy_command, wz_command)
-
 
                 # compute torque from PID
                 u = -kp * (q_joints - q_joints_des) - kd * (v_joints - v_joints_des)
 
             # set the control torque
             data.ctrl[:] = u
+
+
+            # data.qpos[0] = 0 # comment out
+            # data.qpos[1] = 0
+            # data.qpos[2] = 1  # comment out
+            # data.qpos[3] = 1
+            # data.qpos[4] = 0
+            # data.qpos[5] = 0
+            # data.qpos[6] = 0
+
+            # data.qvel[0] = 0 # comment out
+            # data.qvel[1] = 0
+            # data.qvel[2] = 0 # comment out
+            # data.qvel[3] = 0
+            # data.qvel[4] = 0
+            # data.qvel[5] = 0
             
             # advance the simulation
             mujoco.mj_step(model, data)

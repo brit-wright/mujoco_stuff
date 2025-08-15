@@ -34,47 +34,45 @@
         <!-- <geom name="cap1to2" type="capsule" fromto="21 7 0.1  21 9 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/> -->
 
     <geom name="node1" type="sphere" size="0.1" pos="21 6 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node2" type="sphere" size="0.1" pos="19.99106509001618 8.208442944496818 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node3" type="sphere" size="0.1" pos="18.982130180032357 10.416885888993637 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node4" type="sphere" size="0.1" pos="17.973195270048535 12.625328833490457 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node5" type="sphere" size="0.1" pos="16.420553863706164 10.840432492454475 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node6" type="sphere" size="0.1" pos="14.867912457363795 9.055536151418494 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node7" type="sphere" size="0.1" pos="13.315271051021426 7.270639810382514 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node8" type="sphere" size="0.1" pos="11.762629644679055 5.485743469346533 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node9" type="sphere" size="0.1" pos="9.34003757463623 7.054838556555669 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node10" type="sphere" size="0.1" pos="6.917445504593408 8.623933643764806 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node11" type="sphere" size="0.1" pos="8.007679869060897 10.702499298857854 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node12" type="sphere" size="0.1" pos="9.097914233528389 12.781064953950903 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node13" type="sphere" size="0.1" pos="10.18814859799588 14.85963060904395 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node14" type="sphere" size="0.1" pos="11.27838296246337 16.938196264136998 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node15" type="sphere" size="0.1" pos="11.761813967593733 16.810546496104905 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node16" type="sphere" size="0.1" pos="12.189475977851382 17.06959321965567 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node17" type="sphere" size="0.1" pos="12.16068018919222 18.573201119619444 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node18" type="sphere" size="0.1" pos="9.534571259491464 18.485332087962718 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node19" type="sphere" size="0.1" pos="6.908462329790709 18.397463056305988 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node20" type="sphere" size="0.1" pos="4.282353400089953 18.309594024649257 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node21" type="sphere" size="0.1" pos="1.6562444703891972 18.22172499299253 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="node22" type="sphere" size="0.1" pos="2 16 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
-<geom name="cap1to2" type="capsule" fromto="21 6 0.1  19.99106509001618 8.208442944496818 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap2to3" type="capsule" fromto="19.99106509001618 8.208442944496818 0.1  18.982130180032357 10.416885888993637 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap3to4" type="capsule" fromto="18.982130180032357 10.416885888993637 0.1  17.973195270048535 12.625328833490457 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap4to5" type="capsule" fromto="17.973195270048535 12.625328833490457 0.1  16.420553863706164 10.840432492454475 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap5to6" type="capsule" fromto="16.420553863706164 10.840432492454475 0.1  14.867912457363795 9.055536151418494 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap6to7" type="capsule" fromto="14.867912457363795 9.055536151418494 0.1  13.315271051021426 7.270639810382514 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap7to8" type="capsule" fromto="13.315271051021426 7.270639810382514 0.1  11.762629644679055 5.485743469346533 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap8to9" type="capsule" fromto="11.762629644679055 5.485743469346533 0.1  9.34003757463623 7.054838556555669 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap9to10" type="capsule" fromto="9.34003757463623 7.054838556555669 0.1  6.917445504593408 8.623933643764806 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap10to11" type="capsule" fromto="6.917445504593408 8.623933643764806 0.1  8.007679869060897 10.702499298857854 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap11to12" type="capsule" fromto="8.007679869060897 10.702499298857854 0.1  9.097914233528389 12.781064953950903 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap12to13" type="capsule" fromto="9.097914233528389 12.781064953950903 0.1  10.18814859799588 14.85963060904395 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap13to14" type="capsule" fromto="10.18814859799588 14.85963060904395 0.1  11.27838296246337 16.938196264136998 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap14to15" type="capsule" fromto="11.27838296246337 16.938196264136998 0.1  11.761813967593733 16.810546496104905 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap15to16" type="capsule" fromto="11.761813967593733 16.810546496104905 0.1  12.189475977851382 17.06959321965567 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap16to17" type="capsule" fromto="12.189475977851382 17.06959321965567 0.1  12.16068018919222 18.573201119619444 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap17to18" type="capsule" fromto="12.16068018919222 18.573201119619444 0.1  9.534571259491464 18.485332087962718 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap18to19" type="capsule" fromto="9.534571259491464 18.485332087962718 0.1  6.908462329790709 18.397463056305988 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap19to20" type="capsule" fromto="6.908462329790709 18.397463056305988 0.1  4.282353400089953 18.309594024649257 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap20to21" type="capsule" fromto="4.282353400089953 18.309594024649257 0.1  1.6562444703891972 18.22172499299253 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
-<geom name="cap21to22" type="capsule" fromto="1.6562444703891972 18.22172499299253 0.1  2 16 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="node2" type="sphere" size="0.1" pos="19.90888382944246 8.34514860254958 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node3" type="sphere" size="0.1" pos="18.817767658884915 10.69029720509916 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node4" type="sphere" size="0.1" pos="17.726651488327374 13.03544580764874 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node5" type="sphere" size="0.1" pos="16.099462976358613 11.028901233943051 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node6" type="sphere" size="0.1" pos="14.47227446438985 9.022356660237362 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node7" type="sphere" size="0.1" pos="12.845085952421087 7.015812086531673 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node8" type="sphere" size="0.1" pos="11.217897440452326 5.009267512825984 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node9" type="sphere" size="0.1" pos="10.477197462719188 7.8455415143607095 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node10" type="sphere" size="0.1" pos="9.73649748498605 10.681815515895433 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node11" type="sphere" size="0.1" pos="8.995797507252913 13.518089517430159 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node12" type="sphere" size="0.1" pos="8.255097529519775 16.354363518964885 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node13" type="sphere" size="0.1" pos="10.74940796796502 16.647053168224144 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node14" type="sphere" size="0.1" pos="13.243718406410263 16.939742817483403 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node15" type="sphere" size="0.1" pos="11.663017963950045 18.295769880158097 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node16" type="sphere" size="0.1" pos="10.082317521489827 19.651796942832796 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node17" type="sphere" size="0.1" pos="7.811743510187327 19.312423103090744 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node18" type="sphere" size="0.1" pos="5.541169498884827 18.973049263348692 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node19" type="sphere" size="0.1" pos="3.2705954875823267 18.633675423606643 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node20" type="sphere" size="0.1" pos="1.000021476279827 18.29430158386459 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node21" type="sphere" size="0.1" pos="2 16 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="cap1to2" type="capsule" fromto="21 6 0.1  19.90888382944246 8.34514860254958 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap2to3" type="capsule" fromto="19.90888382944246 8.34514860254958 0.1  18.817767658884915 10.69029720509916 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap3to4" type="capsule" fromto="18.817767658884915 10.69029720509916 0.1  17.726651488327374 13.03544580764874 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap4to5" type="capsule" fromto="17.726651488327374 13.03544580764874 0.1  16.099462976358613 11.028901233943051 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap5to6" type="capsule" fromto="16.099462976358613 11.028901233943051 0.1  14.47227446438985 9.022356660237362 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap6to7" type="capsule" fromto="14.47227446438985 9.022356660237362 0.1  12.845085952421087 7.015812086531673 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap7to8" type="capsule" fromto="12.845085952421087 7.015812086531673 0.1  11.217897440452326 5.009267512825984 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap8to9" type="capsule" fromto="11.217897440452326 5.009267512825984 0.1  10.477197462719188 7.8455415143607095 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap9to10" type="capsule" fromto="10.477197462719188 7.8455415143607095 0.1  9.73649748498605 10.681815515895433 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap10to11" type="capsule" fromto="9.73649748498605 10.681815515895433 0.1  8.995797507252913 13.518089517430159 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap11to12" type="capsule" fromto="8.995797507252913 13.518089517430159 0.1  8.255097529519775 16.354363518964885 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap12to13" type="capsule" fromto="8.255097529519775 16.354363518964885 0.1  10.74940796796502 16.647053168224144 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap13to14" type="capsule" fromto="10.74940796796502 16.647053168224144 0.1  13.243718406410263 16.939742817483403 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap14to15" type="capsule" fromto="13.243718406410263 16.939742817483403 0.1  11.663017963950045 18.295769880158097 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap15to16" type="capsule" fromto="11.663017963950045 18.295769880158097 0.1  10.082317521489827 19.651796942832796 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap16to17" type="capsule" fromto="10.082317521489827 19.651796942832796 0.1  7.811743510187327 19.312423103090744 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap17to18" type="capsule" fromto="7.811743510187327 19.312423103090744 0.1  5.541169498884827 18.973049263348692 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap18to19" type="capsule" fromto="5.541169498884827 18.973049263348692 0.1  3.2705954875823267 18.633675423606643 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap19to20" type="capsule" fromto="3.2705954875823267 18.633675423606643 0.1  1.000021476279827 18.29430158386459 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap20to21" type="capsule" fromto="1.000021476279827 18.29430158386459 0.1  2 16 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
 </worldbody>
 </mujoco>
