@@ -108,8 +108,6 @@ if __name__ == '__main__':
     # for timing the total sim time
     t0_real_time = time.time()
 
-    fact = 0.0
-
     # define the trajectory object
     robot = QuadrupedController(data, mj_idx, q0_joint)
 
@@ -127,25 +125,20 @@ if __name__ == '__main__':
     T_reset = 1
     deltx = 0.0
     z_command = 0.35
-    v_bod = 0.6
 
-    goal_pos = [5, 15]
+    goal_pos = [10, 12]
 
-    k_mag = 1.0
     k_theta = 1.0
     k_x = 1.0
-    k_y = 1.0
-
-    # forward_max = 0.5
-    # turn_max = 0.8
+    k_y = 0.0
 
     forward_max = 0.5
     turn_max = 0.5
 
-    gait_start = True
+    goal_found = False
 
     # main simulation loop
-    while (not glfw.window_should_close(window)) and (t_sim < max_sim_time):
+    while (not glfw.window_should_close(window)) and (t_sim < max_sim_time) and goal_found == False:
 
         t0_sim = data.time
 
@@ -185,15 +178,26 @@ if __name__ == '__main__':
 
                 # clipping the values
                 if wz_command >= 0.0:
-                    wz_command = np.clip(wz_command, 0.1, turn_max)
+                    wz_command = np.clip(wz_command, 0.0, turn_max)
                 elif wz_command < 0.0:
-                    wz_command = np.clip(wz_command, -0.1, -turn_max)
+                    wz_command = np.clip(wz_command, -turn_max, 0.0)
 
+                if vy_command >= 0.0:
+                    vy_command = np.clip(vy_command, 0.0, forward_max)
+                elif vy_command < 0.0:
+                    vy_command = np.clip(vy_command, -forward_max, 0.0)
 
-                vx_command = np.clip(vx_command, 0.2, forward_max)
-                vy_command = np.clip(vy_command, 0.2, forward_max)
+                if vx_command >= 0.0:
+                    vx_command = np.clip(vx_command, 0.2, forward_max)
+                elif vx_command < 0.0:
+                    vx_command = np.clip(vx_command, -forward_max, -0.2)
 
-                commands = np.array([vx_command, 0.0, wz_command])
+                # print(f'before: {vx_command}')
+                # vx_command = np.clip(vx_command, 0.0, forward_max)
+                # print(f'after: {vx_command}')
+                # vy_command = np.clip(vy_command, 0.0, forward_max)
+
+                commands = np.array([vx_command, vy_command, wz_command])
 
                 errors = np.array([x_error, y_error, angle_error])
 
@@ -203,7 +207,11 @@ if __name__ == '__main__':
                 
                 else:
                     t_curr = t_sim - T_stand
-                    q_joints_des = robot.walker(t_curr, commands, errors, theta_curr, gait_start)
+                    q_joints_des, goal_found = robot.walker(t_curr, commands, errors, theta_curr)
+
+                    if goal_found == True:
+                        print('goal found')
+                        break
                 
 
                 # compute torque from PID
