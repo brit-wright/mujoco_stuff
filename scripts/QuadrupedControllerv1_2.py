@@ -673,6 +673,8 @@ class QuadrupedController:
 
         self.forward_reset_check = False
 
+        self.mode = ''
+
     # jointnames helper function
     def jointnames(self):
         # 12 joints
@@ -875,7 +877,7 @@ class QuadrupedController:
 
             pd_leg = double_stance1(t, self.double_stance_time, 0, end_fl, end_fr, end_rl, end_rr)
             self.stance1 = pd_leg
-            self.all_four_turn = True
+            self.all_four = True
         
         elif t < (self.double_stance_time + self.single_stance_time):
 
@@ -895,7 +897,7 @@ class QuadrupedController:
             # swing the left leg, stance the right leg
             pd_leg = swingleft_stanceright(t - self.double_stance_time, self.single_stance_time, 0, pos_foot_fl, pos_foot_fr, pos_foot_rl, pos_foot_rr)
             self.double2_start = pd_leg
-            self.all_four_turn = False
+            self.all_four = False
 
         elif t < (2*self.double_stance_time + self.single_stance_time):
 
@@ -922,7 +924,7 @@ class QuadrupedController:
             # both stance, re-adjust the body position
             pd_leg = double_stance2(t - (self.double_stance_time + self.single_stance_time), self.double_stance_time, 0, end_fl, end_fr, end_rl, end_rr)
             self.stance2 = pd_leg
-            self.all_four_turn = True
+            self.all_four = True
         
         elif t < self.cycle_len:
 
@@ -941,7 +943,7 @@ class QuadrupedController:
 
             pd_leg = swingright_stanceleft(t - (2*self.double_stance_time+self.single_stance_time), self.single_stance_time, 0, pos_foot_fl, pos_foot_fr, pos_foot_rl, pos_foot_rr)
             self.double1_start = pd_leg
-            self.all_four_turn = False
+            self.all_four = False
 
 
         rot_mat = np.array([[cos(yaw_curr), -sin(yaw_curr), 0.0],
@@ -1131,11 +1133,16 @@ class QuadrupedController:
         
         return self.qstable
     
-    def walker(self, t, commands, errors, theta_curr):
+    def walker(self, t, commands, errors, theta_curr, dist_error):
         
         restart = False
-        
 
+        if abs(errors[-1]) > 0.4 and self.mode == '':
+            commands[0] = 0.0
+            commands[1] = 0.0
+        else:
+            self.mode = 'walking'
+        
         print(f'commands: {commands}')
         print(f'errors: {errors}')
         
@@ -1149,19 +1156,15 @@ class QuadrupedController:
             self.q_joints = self.walk_and_turn(t_curr, commands, theta_curr)
             self.t_walk_fin = t
 
-            if errors[0] <= 0.01 and errors[-1] <= 1e-1:
-                self.goal_found = True
-                restart = True
-                self.reset()
-
-        # if self.goal_found == True:
-        #     # need to get the new foot position values for stabilizing
-        #     if t > self.t_walk_fin and t < self.t_walk_fin + self.T_reset:
-        #         t_curr = t - self.t_walk_fin
-        #         self.q_joints = self.reset(t_curr, self.T_reset)
-        #     else:
-        #         restart = True
-
+            if dist_error < 1e-1 and errors[2] <= 4e-1:
+                # goal has been found
+                if self.all_four == True:
+                    self.goal_found = True
+                    print('goal found')
+                    # time.sleep(5)
+                    restart = True
+                    self.reset()
+                    self.mode = ''
 
         return self.q_joints, restart
 
