@@ -954,7 +954,7 @@ class QuadrupedController:
 
         v_base_y_curr = (rot_mat.T @ self.data.qvel[self.mj_idx.v_base_vel_idx])[1]
 
-        print(f'v_base_y_curr: {v_base_y_curr}')
+        # print(f'v_base_y_curr: {v_base_y_curr}')
 
         # print(f'current y-velocity: {v_base_y_curr}')
         # print(f'current y-position: {self.data.qvel[self.mj_idx.POS_Y]}')
@@ -1133,22 +1133,32 @@ class QuadrupedController:
         
         return self.qstable
     
-    def walker(self, t, commands, errors, theta_curr, dist_error):
+    def walker(self, t, commands, errors, theta_curr, dist_error, midpoint):
         
         restart = False
 
-        if abs(errors[-1]) > 0.4 and self.mode == '':
+        # did 0.4 when max was 0.6
+        # doing 0.2 for max = 0.8 and 1.0
+        if abs(errors[-1]) > 0.2 and self.mode == '':
             commands[0] = 0.0
             commands[1] = 0.0
+
+            if commands[2] >= 0.0:
+                commands[2] = np.clip(commands[2], 0.0, 0.6)
+            elif commands[2] < 0.0:
+                commands[2] = np.clip(commands[2], -0.6, 0.0)
+
         else:
             self.mode = 'walking'
         
         print(f'commands: {commands}')
         print(f'errors: {errors}')
+        print(f'distance error: {dist_error}')
         
         if t < self.T_stab:
             print('stabilizing')
-            self.q_joints = self.stabilize(t, self.T_stab, self.zcomm, commands[0])
+            # self.q_joints = self.stabilize(t, self.T_stab, self.zcomm, commands[0])
+            self.q_joints = self.stabilize(t, self.T_stab, self.zcomm, midpoint)
 
         else:
             # goes into the walking controller
@@ -1156,7 +1166,10 @@ class QuadrupedController:
             self.q_joints = self.walk_and_turn(t_curr, commands, theta_curr)
             self.t_walk_fin = t
 
-            if dist_error < 1e-1 and errors[2] <= 4e-1:
+            # did 1e-1 and 4e-1 when max was 0.6 and 0.8
+            # doing 2e-1 and 5e-1 for max = 1.0
+
+            if (dist_error < 2e-1 and errors[2] <= 6e-1) or dist_error < 1.5e-1:
                 # goal has been found
                 if self.all_four == True:
                     self.goal_found = True

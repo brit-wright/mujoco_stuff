@@ -1,0 +1,47 @@
+Keeping some notes about what the docs mean
+
+1. noel_maze_walk_turn_point_6.npz 
+
+Both the max rotation speed and max forward speed are set to 0.6 m/s
+Uses tighter constraints in the controller for angular and spatial error and looser turn in place contraints:
+- Triggers turn in place when angular error is greater than 0.4 (could be looser since the tracking was already pretty good)
+- Triggers goal found when distance within 1e-1 and angle within 4e-1
+Stops at each checkpoint, even if the angular error is small - need to fix this
+Min velocity threshold set to 0.3 m/s
+
+2. noel_maze_walk_turn_point_8.npz 
+
+Both the max rotation speed and max forward speed are set to 0.8 m/s
+Needs tigher constraints for turn in place:
+- Triggers turn in place when angular error is greater than 0.2 (needs tightness due to poorer tracking)
+- Uses same goal threshold values as 0.8 version
+Stops at each checkpoint, even if the angular error is small
+Notice that there's some stomping during some of the gait patterns --> my best guess is that this could be due to the changing
+'gait length' which is a function of velocity. The difference between 0.8 m/s and the min 0.3 m/s might be enough to make the gait become hobbley
+
+3. noel_maze_walk_turn_1_point_0.npz
+
+Both the max rotation speed and max forward speed are set to 1.0 m/s
+Uses same turn in place constraints as noel_maze_walk_turn_point_8.npz
+Uses looser constraints for angular and spatial error (due to poorer tracking and faster velocity, the robot can overshoot the goal)
+- Triggers goal found when distance within 2e-1 and angle within 5e-1
+Stops at each checkpoint, even if the angular error is small
+Also noticed some stomping here even though in this script, the minimum forward velocity is set to 0.5 m/s
+
+4. noel_maze_walk_turn_1_point_0_v2.npz
+
+Both the max rotation speed and max forward speed are set to 1.0 m/s
+Kept the same turn in place constraint
+Slightly loosened the the angular and spatial contraints
+- Triggers goal when either 1. ditance within 2e-1 and angle within 6e-1 OR 2. distance withing 1.5e-1 and angle is anything
+- Increased the minimum distance to 0.7
+- Changed the stabilization distance and noticed improvement in gait. Defined midpoint = 3*(0.7 + 1.0)/4 and used that as the stabilization distance.
+- Noticed that at max rotation speed = 1.0 m/s the turning in place would be a bit violent. I enforced hard constraints of +=6, for next iteration
+- I want to do a numpy.clip instead of a hard constraint because the hard constraint makes it take longer for the angular error to close.
+
+5. noel_maze_walk_turn_1_point_0_v2.npz
+
+Same contraints as noel_maze_walk_turn_1_point_0_v1.npz.
+Applied the np.clip method. Noticed better turning in place (bestie doesn't look like she's on the verge of falling over)
+But also noticed a kinda messy transition between turning and forward stabilization
+Going to take a break from this for now to focus on removing unnecessary stops in path :D

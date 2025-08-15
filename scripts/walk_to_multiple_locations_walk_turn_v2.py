@@ -142,8 +142,8 @@ if __name__ == '__main__':
     k_y = 0.0
     k_theta = 1.0
 
-    forward_max = 0.6
-    turn_max = 0.6
+    forward_max = 1.0
+    turn_max = 1.0
 
     iter_walk = 0
     all_four = False
@@ -227,13 +227,15 @@ if __name__ == '__main__':
                 # elif vx_command < 0.0:
                 #     vx_command = np.clip(vx_command, -forward_max, -0.2)
 
-                vx_command = np.clip(vx_command, 0.3, forward_max)
+                vx_command = np.clip(vx_command, 0.7, forward_max)
 
                 commands = np.array([vx_command, vy_command, wz_command])
 
                 errors = np.array([x_error, y_error, angle_error])
 
-               
+                midpoint = 3*(0.7 + forward_max)/4
+
+
                 t_sim2 = t_sim - t_restart
 
                 if t_restart != 0:
@@ -244,7 +246,7 @@ if __name__ == '__main__':
                     q_joints_des = robot.stand()
                 else:
                     t_curr = t_sim2 - T_stand
-                    q_joints_des, goal_found = robot.walker(t_curr, commands, errors, theta_curr, distance_error)
+                    q_joints_des, goal_found = robot.walker(t_curr, commands, errors, theta_curr, distance_error, midpoint)
 
                 if goal_found == True:
                     print('Goal found')
