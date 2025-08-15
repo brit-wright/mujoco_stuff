@@ -562,6 +562,8 @@ class QuadrupedController:
 
     def __init__(self, data, mj_idx, q0_joint):
 
+        self.goal_found = False
+
         self.data = data
         self.mj_idx = mj_idx
 
@@ -589,6 +591,8 @@ class QuadrupedController:
         self.urdf = './models/go2/go2.urdf'
 
         self.cycle_len = 0.4
+
+        self.T_reset = 0.4
 
         # set up the kinematic chains
         # chains from base to foot
@@ -983,24 +987,75 @@ class QuadrupedController:
         
         return self.qcurr
 
-    def stabilize(self, t, T, z_comm):
+    def reset(self):
 
-        self.deltx = 0.6 * (self.single_stance_time - self.double_stance_time)
+        # get the current foot positions
+
+        self.p0_base_foot_fl = self.chain_base_foot_fl.fkin(self.qcurr[self.fl[0]: self.fl[-1]+1])[0]
+        self.p0_base_hip_fl = self.chain_base_hip_fl.fkin(self.qcurr[self.fl[0]:self.fl[1]])[0]
+        self.p0_base_thigh_fl = self.chain_base_thigh_fl.fkin(self.qcurr[self.fl[0]: self.fl[-1]])[0]
+
+        self.p0_foot_fl = self.p0_base_foot_fl - self.p0_base_hip_fl
+        self.p0_thigh_fl = self.p0_base_thigh_fl - self.p0_base_hip_fl
+
+
+        self.p0_base_foot_fr = self.chain_base_foot_fr.fkin(self.qcurr[self.fr[0]: self.fr[-1]+1])[0]
+        self.p0_base_hip_fr = self.chain_base_hip_fr.fkin(self.qcurr[self.fr[0]:self.fr[1]])[0]
+        self.p0_base_thigh_fr = self.chain_base_thigh_fr.fkin(self.qcurr[self.fr[0]: self.fr[-1]])[0]
+
+        self.p0_foot_fr = self.p0_base_foot_fr - self.p0_base_hip_fr
+        self.p0_thigh_fr = self.p0_base_thigh_fr - self.p0_base_hip_fr
+
+
+        self.p0_base_foot_rl = self.chain_base_foot_rl.fkin(self.qcurr[self.rl[0]: self.rl[-1]+1])[0]
+        self.p0_base_hip_rl = self.chain_base_hip_rl.fkin(self.qcurr[self.rl[0]:self.rl[1]])[0]
+        self.p0_base_thigh_rl = self.chain_base_thigh_rl.fkin(self.qcurr[self.rl[0]: self.rl[-1]])[0]
+
+        self.p0_foot_rl = self.p0_base_foot_rl - self.p0_base_hip_rl
+        self.p0_thigh_rl = self.p0_base_thigh_rl - self.p0_base_hip_rl
+
+
+        self.p0_base_foot_rr = self.chain_base_foot_rr.fkin(self.qcurr[self.rr[0]: self.rr[-1]+1])[0]
+        self.p0_base_hip_rr = self.chain_base_hip_rr.fkin(self.qcurr[self.rr[0]:self.rr[1]])[0]
+        self.p0_base_thigh_rr = self.chain_base_thigh_rr.fkin(self.qcurr[self.rr[0]: self.rr[-1]])[0]
+
+        self.p0_foot_rr = self.p0_base_foot_rr - self.p0_base_hip_rr
+        self.p0_thigh_rr = self.p0_base_thigh_rr - self.p0_base_hip_rr
+    
+    def stabilize(self, t, T, z_comm, x_comm):
+
+        self.deltx = x_comm * (self.single_stance_time - self.double_stance_time)
+
+        # self.deltx = 0.0
 
         # this is just going to do a stabilization such that the body is at a certain height and the feet are under the
         # hips
         p0_FLx = self.p0_foot_fl[0]
         pf_FLx = self.p0_thigh_fl[0] - self.deltx/2
 
+        p0_FLy = self.p0_foot_fl[1]
+        pf_FLy = self.p0_thigh_fl[1]
+
 
         p0_FRx = self.p0_foot_fr[0]
         pf_FRx = self.p0_thigh_fr[0] + self.deltx/2
 
+        p0_FRy = self.p0_foot_fr[1]
+        pf_FRy = self.p0_thigh_fr[1]
+
+
         p0_RLx = self.p0_foot_rl[0]
         pf_RLx = self.p0_thigh_rl[0] + self.deltx/2
 
+        p0_RLy = self.p0_foot_rl[1]
+        pf_RLy = self.p0_thigh_rl[1]
+
+
         p0_RRx = self.p0_foot_rr[0]
         pf_RRx = self.p0_thigh_rr[0] - self.deltx/2
+
+        p0_RRy = self.p0_foot_rr[1]
+        pf_RRy = self.p0_thigh_rr[1]
 
         # the desired leg z-position is just the negative of the z command
         p0_FLz = self.p0_foot_fl[2]
@@ -1020,32 +1075,36 @@ class QuadrupedController:
         alph = t/T
 
         pdes_x = (1 - alph) * p0_FLx + alph * pf_FLx
+        pdes_y = (1 - alph) * p0_FLy + alph * pf_FLy
         pdes_z = (1 - alph) * p0_FLz + alph * pf_FLz
-        pcurr_FL = [pdes_x, self.p0_foot_fl[1], pdes_z]
+        pcurr_FL = [pdes_x, pdes_y, pdes_z]
 
         # calculate the inverse kinematics by passing pcurr_FL, q_curr, and 
         theta_FL = NewtonRaphson(self.p0_foot_fl, pcurr_FL, self.qstable[0:3], self.chain_base_foot_fl, self.chain_base_hip_fl).call_newton_raphson()
 
 
         pdes_x = (1 - alph) * p0_FRx + alph * pf_FRx
+        pdes_y = (1 - alph) * p0_FRy + alph * pf_FRy
         pdes_z = (1 - alph) * p0_FRz + alph * pf_FRz
-        pcurr_FR = [pdes_x, self.p0_foot_fr[1], pdes_z]
+        pcurr_FR = [pdes_x, pdes_y, pdes_z]
 
         # calculate the inverse kinematics by passing pcurr_FL, q_curr, and 
         theta_FR = NewtonRaphson(self.p0_foot_fr, pcurr_FR, self.qstable[3:6], self.chain_base_foot_fr, self.chain_base_hip_fr).call_newton_raphson()
         
 
         pdes_x = (1 - alph) * p0_RLx + alph * pf_RLx
+        pdes_y = (1 - alph) * p0_RLy + alph * pf_RLy
         pdes_z = (1 - alph) * p0_RLz + alph * pf_RLz
-        pcurr_RL = [pdes_x, self.p0_foot_rl[1], pdes_z]
+        pcurr_RL = [pdes_x, pdes_y, pdes_z]
 
         # calculate the inverse kinematics by passing pcurr_FL, q_curr, and 
         theta_RL = NewtonRaphson(self.p0_foot_rl, pcurr_RL, self.qstable[6:9], self.chain_base_foot_rl, self.chain_base_hip_rl).call_newton_raphson()
 
         
         pdes_x = (1 - alph) * p0_RRx + alph * pf_RRx
+        pdes_y = (1 - alph) * p0_RRy + alph * pf_RRy
         pdes_z = (1 - alph) * p0_RRz + alph * pf_RRz
-        pcurr_RR = [pdes_x, self.p0_foot_rr[1], pdes_z]
+        pcurr_RR = [pdes_x, pdes_y, pdes_z]
 
         # calculate the inverse kinematics by passing pcurr_FL, q_curr, and 
         theta_RR = NewtonRaphson(self.p0_foot_rr, pcurr_RR, self.qstable[9:12], self.chain_base_foot_rr, self.chain_base_hip_rr).call_newton_raphson() 
@@ -1056,8 +1115,6 @@ class QuadrupedController:
                         theta_FR[0], theta_FR[1], theta_FR[2],
                         theta_RL[0], theta_RL[1], theta_RL[2],
                         theta_RR[0], theta_RR[1], theta_RR[2]]
-        
-
 
         # also want to calcualate the position of the feet w.r.t. the base. will need for the new gait controller
         self.fl_base_foot = self.chain_base_foot_fl.fkin(self.qstable[self.fl[0]: self.fl[-1]+1])[0]
@@ -1075,26 +1132,38 @@ class QuadrupedController:
         return self.qstable
     
     def walker(self, t, commands, errors, theta_curr):
-
-        goal_found = False
+        
+        restart = False
+        
 
         print(f'commands: {commands}')
         print(f'errors: {errors}')
         
         if t < self.T_stab:
             print('stabilizing')
-            self.q_joints = self.stabilize(t, self.T_stab, self.zcomm)
+            self.q_joints = self.stabilize(t, self.T_stab, self.zcomm, commands[0])
 
         else:
             # goes into the walking controller
-            print('walking')
             t_curr = t - self.T_stab
             self.q_joints = self.walk_and_turn(t_curr, commands, theta_curr)
+            self.t_walk_fin = t
 
             if errors[0] <= 0.01 and errors[-1] <= 1e-1:
-                goal_found = True
+                self.goal_found = True
+                restart = True
+                self.reset()
 
-        return self.q_joints, goal_found
+        # if self.goal_found == True:
+        #     # need to get the new foot position values for stabilizing
+        #     if t > self.t_walk_fin and t < self.t_walk_fin + self.T_reset:
+        #         t_curr = t - self.t_walk_fin
+        #         self.q_joints = self.reset(t_curr, self.T_reset)
+        #     else:
+        #         restart = True
+
+
+        return self.q_joints, restart
 
 if __name__=="__main__":
 
