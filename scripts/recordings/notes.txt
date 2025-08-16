@@ -39,9 +39,32 @@ Slightly loosened the the angular and spatial contraints
 - Noticed that at max rotation speed = 1.0 m/s the turning in place would be a bit violent. I enforced hard constraints of +=6, for next iteration
 - I want to do a numpy.clip instead of a hard constraint because the hard constraint makes it take longer for the angular error to close.
 
-5. noel_maze_walk_turn_1_point_0_v2.npz
+5. noel_maze_walk_turn_1_point_0_v3.npz
 
-Same contraints as noel_maze_walk_turn_1_point_0_v1.npz.
+Same contraints as noel_maze_walk_turn_1_point_0_v2.npz.
 Applied the np.clip method. Noticed better turning in place (bestie doesn't look like she's on the verge of falling over)
 But also noticed a kinda messy transition between turning and forward stabilization
 Going to take a break from this for now to focus on removing unnecessary stops in path :D
+
+
+6. noel_maze_walk_turn1_point_0_v4.npz
+Fixed the unnecessary stops thing by checking if the point is intermediate and by using a theta constraint of 0.3. It's wonderful :D 
+From here, I wanna tighten the goal-finding constraints so that the bot can hug the turns better. Using the same constraints as
+noel_maze_walk_turn_1_point_0_v2.npz.
+
+7. noel_maze_walk_turn1_point_0_v5.npz
+This one looked nice lol.
+Goal constraint used: if dist_error < 1.5e-1:
+I think I wanna tighten the distance error even more? but this still pretty good
+
+8. noel_maze_walk_turn1_point_0_v6.npz
+Hugs walls better but requires more re-adjusting at intermediate points because the bot has to swerve more
+to get to the waypoints
+Goal constraint used: if (dist_error < 1.2e-1) or (dist_error <1.5e-1 and is_goal == True):
+I'll try to loosen the theta constraint to see if that allows for less re-adjustment
+
+9, noel_maze_walk_turn1_point_0_v7.npz
+Goal constraint used: if (dist_error < 1.3e-1) or (dist_error <1.5e-1 and is_goal == True):
+Skip stabilization constraint also loosened: if abs(theta_last) < 0.4
+Still good wall-hugging. Slightly better waypoint movement than noel_maze_walk_turn1_point_0_v6
+I think this is good for now. TAKING A BREAK TO FOCUS ON SOMETHING ELSE :D

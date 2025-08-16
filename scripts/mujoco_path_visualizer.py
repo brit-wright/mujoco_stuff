@@ -13,6 +13,8 @@ def generate_waypoints(points):
     
     way_points_list = []
 
+    intermediates = []
+
     for i in range(len(points)-1):
 
 
@@ -37,13 +39,15 @@ def generate_waypoints(points):
 
                 way_points.insert(start_ind+idx, [way_x, way_y, 0.1])
 
+                intermediates.append([way_x, way_y, 0.1])
+
         for pt in way_points: way_points_list.append(pt)
 
     way_points_list.append(points[i+1])
 
-    return way_points_list
+    return way_points_list, intermediates
 
-def add_path_to_xml(path_nodes):
+def add_path_to_xml(path_nodes, intermediates):
     
     geoms = []
 
@@ -52,8 +56,12 @@ def add_path_to_xml(path_nodes):
 
     for index, (x, y, z) in enumerate(path_nodes):
 
-        geom = f'<geom name="node{index+1}" type="sphere" size="0.1" pos="{x} {y} {z}" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>'
-        geoms.append(geom)
+        if [x, y, z] in intermediates:
+            geom = f'<geom name="node{index+1}" type="sphere" size="0.1" pos="{x} {y} {z}" rgba="1 1 0 0.5" contype="2" conaffinity="2"/>'
+            geoms.append(geom)
+        else:
+            geom = f'<geom name="node{index+1}" type="sphere" size="0.1" pos="{x} {y} {z}" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>'
+            geoms.append(geom)
 
     # add the capsules to the .xml file to connect the nodes to one another. syntax looks like this
     # <geom name="cap1to2" type="capsule" fromto="21 7 0.1  21 9 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
@@ -74,11 +82,11 @@ def main():
 
     print(f'path_nodes: {path_nodes}')
 
-    inters = generate_waypoints(path_nodes)
+    inters, intermediates = generate_waypoints(path_nodes)
 
     print(f'waypoints: {inters}')
 
-    path_geoms = add_path_to_xml(inters)
+    path_geoms = add_path_to_xml(inters, intermediates)
 
     base_xml_path = './models/go2/noel_maze.xml'
     new_xml_path = './models/go2/maze_with_geoms.xml'
@@ -91,10 +99,12 @@ def main():
     with open(new_xml_path, "w") as f:
         f.write(new_xml)
         
+    # print(f'intermediates: {intermediates}')
+
     # model = mujoco.MjModel.from_xml_path(new_xml_path)
     # launch(model)
 
-    return new_xml_path, inters
+    return new_xml_path, inters, intermediates
 
 if __name__ == "__main__":
     main()

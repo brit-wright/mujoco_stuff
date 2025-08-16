@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # load the mujoco model
     # mj_model_path = "./models/go2/scene.xml"
 
-    mj_model_path, path_nodes = mjPath.main()
+    mj_model_path, path_nodes, intermediates = mjPath.main()
     model = mujoco.MjModel.from_xml_path(mj_model_path)
     data = mujoco.MjData(model)
 
@@ -161,6 +161,10 @@ if __name__ == '__main__':
 
     saved_states = []
 
+    skip_stable = False
+
+    is_goal = False
+
     print(f'bot location: {q[mj_idx.q_base_pos_idx]}')
     print(f'checkpoint location: {goal_pos[checkpoint_num]}')
 
@@ -222,18 +226,13 @@ if __name__ == '__main__':
                 elif vy_command < 0.0:
                     vy_command = np.clip(vy_command, -forward_max, 0.0)
 
-                # if vx_command >= 0.0:
-                #     vx_command = np.clip(vx_command, 0.2, forward_max)
-                # elif vx_command < 0.0:
-                #     vx_command = np.clip(vx_command, -forward_max, -0.2)
-
                 vx_command = np.clip(vx_command, 0.7, forward_max)
 
                 commands = np.array([vx_command, vy_command, wz_command])
 
                 errors = np.array([x_error, y_error, angle_error])
 
-                midpoint = 3*(0.7 + forward_max)/4
+                midpoint = 2*(0.7 + forward_max)/4
 
 
                 t_sim2 = t_sim - t_restart
@@ -246,11 +245,21 @@ if __name__ == '__main__':
                     q_joints_des = robot.stand()
                 else:
                     t_curr = t_sim2 - T_stand
-                    q_joints_des, goal_found = robot.walker(t_curr, commands, errors, theta_curr, distance_error, midpoint)
+                    q_joints_des, goal_found, theta_last = robot.walker(t_curr, commands, errors, theta_curr, distance_error, midpoint, skip_stable, is_goal)
 
                 if goal_found == True:
                     print('Goal found')
+                    
+                    if abs(theta_last) < 0.4 and goal_pos[checkpoint_num] in intermediates:
+                        skip_stable = True
+                    else:
+                        skip_stable = False
+
                     checkpoint_num += 1
+                    if checkpoint_num == len(goal_pos) - 1:
+                        # this means that the element at this index is the goal
+                        is_goal = True
+
                     goal_found = False
                     t_restart = t_sim
                     

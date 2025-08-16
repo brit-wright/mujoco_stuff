@@ -1133,8 +1133,9 @@ class QuadrupedController:
         
         return self.qstable
     
-    def walker(self, t, commands, errors, theta_curr, dist_error, midpoint):
+    def walker(self, t, commands, errors, theta_curr, dist_error, midpoint, skip_stable, is_goal):
         
+        theta_last = None
         restart = False
 
         # did 0.4 when max was 0.6
@@ -1155,31 +1156,36 @@ class QuadrupedController:
         print(f'errors: {errors}')
         print(f'distance error: {dist_error}')
         
-        if t < self.T_stab:
+        if t < self.T_stab and skip_stable == False:
             print('stabilizing')
             # self.q_joints = self.stabilize(t, self.T_stab, self.zcomm, commands[0])
             self.q_joints = self.stabilize(t, self.T_stab, self.zcomm, midpoint)
 
         else:
             # goes into the walking controller
-            t_curr = t - self.T_stab
+            if (t >= self.T_stab and skip_stable == False):
+                t_curr = t - self.T_stab
+            elif skip_stable == True:
+                t_curr = t
             self.q_joints = self.walk_and_turn(t_curr, commands, theta_curr)
             self.t_walk_fin = t
 
             # did 1e-1 and 4e-1 when max was 0.6 and 0.8
             # doing 2e-1 and 5e-1 for max = 1.0
 
-            if (dist_error < 2e-1 and errors[2] <= 6e-1) or dist_error < 1.5e-1:
+            # if (dist_error < 2e-1 and errors[2] <= 6e-1) or dist_error < 1.5e-1:
                 # goal has been found
+            if (dist_error < 1.3e-1) or (dist_error <1.5e-1 and is_goal == True):
                 if self.all_four == True:
                     self.goal_found = True
                     print('goal found')
-                    # time.sleep(5)
                     restart = True
                     self.reset()
                     self.mode = ''
+                    theta_last = errors[2]
 
-        return self.q_joints, restart
+
+        return self.q_joints, restart, theta_last
 
 if __name__=="__main__":
 
