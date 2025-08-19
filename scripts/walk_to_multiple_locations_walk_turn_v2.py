@@ -195,6 +195,8 @@ if __name__ == '__main__':
 
                 p_curr = q[mj_idx.q_base_pos_idx]
 
+                # get the current angular velocity for later use in the controller script
+                angz = q[mj_idx.ANG_Z]
 
                 theta_curr = quaternion_to_yaw(q[mj_idx.QUAT_W], q[mj_idx.QUAT_X], q[mj_idx.QUAT_Y], q[mj_idx.QUAT_Z])
                 theta_desired = atan2(goal_pos[checkpoint_num][1] - p_curr[1], goal_pos[checkpoint_num][0] - p_curr[0])
@@ -245,12 +247,12 @@ if __name__ == '__main__':
                     q_joints_des = robot.stand()
                 else:
                     t_curr = t_sim2 - T_stand
-                    q_joints_des, goal_found, theta_last = robot.walker(t_curr, commands, errors, theta_curr, distance_error, midpoint, skip_stable, is_goal)
+                    q_joints_des, goal_found, theta_last = robot.walker(t_curr, commands, errors, theta_curr, distance_error, midpoint, skip_stable, is_goal, angz)
 
                 if goal_found == True:
                     print('Goal found')
                     
-                    if abs(theta_last) < 0.4 and goal_pos[checkpoint_num] in intermediates:
+                    if abs(theta_last) < 0.3 and goal_pos[checkpoint_num] in intermediates:
                         skip_stable = True
                     else:
                         skip_stable = False

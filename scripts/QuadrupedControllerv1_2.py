@@ -721,7 +721,7 @@ class QuadrupedController:
         q_joints_des = self.q0_joint
         return q_joints_des
     
-    def walk_and_turn(self, t, commands, yaw_curr):
+    def walk_and_turn(self, t, commands, yaw_curr, angz):
 
         # NOTE: yaw_curr is supposed to be used for walking and turning
         
@@ -950,14 +950,7 @@ class QuadrupedController:
                             [sin(yaw_curr), cos(yaw_curr), 0.0],
                             [0.0, 0.0, 1.0]])
 
-        # v_base_y_curr = (np.transpose(rot_mat) @ self.data.qvel[self.mj_idx.v_base_vel_idx])[1]
-
         v_base_y_curr = (rot_mat.T @ self.data.qvel[self.mj_idx.v_base_vel_idx])[1]
-
-        # print(f'v_base_y_curr: {v_base_y_curr}')
-
-        # print(f'current y-velocity: {v_base_y_curr}')
-        # print(f'current y-position: {self.data.qvel[self.mj_idx.POS_Y]}')
         v_base_y_desired = 0.0
 
         kv = -0.06 * commands[0]/0.8
@@ -966,7 +959,30 @@ class QuadrupedController:
         pd_leg[4] = pd_leg[4] - kv*(v_base_y_curr - v_base_y_desired)
         pd_leg[7] = pd_leg[7] - kv*(v_base_y_curr - v_base_y_desired)
         pd_leg[10] = pd_leg[10] - kv*(v_base_y_curr - v_base_y_desired)
+
+        # apply another round of Raibert's Heuristic on the feet
+        # get the current angular velocity about z
+
+        # It's a bit jank. need to look into why. the math seems correct so it could just be a matter of choosing
+        # the correct constants
+        # k_dub = -0.000000000000000000000000000000000000000000003
         
+        # yaw_Raibert = yaw_curr - k_dub * (angz - commands[2])
+    
+        # rot_yaw_Raibert = np.array([[cos(yaw_Raibert), -sin(yaw_Raibert), 0.0],
+        #                             [sin(yaw_Raibert), cos(yaw_Raibert), 0.0],
+        #                             [0.0, 0.0, 1.0]])
+        
+        # # apply the rotation matrix to the pd_leg positions
+        # pd_leg1 = rot_yaw_Raibert @ pd_leg[0:3]
+        # pd_leg2 = rot_yaw_Raibert @ pd_leg[3:6]
+        # pd_leg3 = rot_yaw_Raibert @ pd_leg[6:9]
+        # pd_leg4 = rot_yaw_Raibert @ pd_leg[9:12]
+
+        # theta_FL = NewtonRaphson(self.pdlast[0:3], pd_leg1, self.qcurr[0:3], self.chain_base_foot_fl, self.chain_base_hip_fl).call_newton_raphson()
+        # theta_FR = NewtonRaphson(self.pdlast[3:6], pd_leg2, self.qcurr[3:6], self.chain_base_foot_fr, self.chain_base_hip_fr).call_newton_raphson()
+        # theta_RL = NewtonRaphson(self.pdlast[6:9], pd_leg3, self.qcurr[6:9], self.chain_base_foot_rl, self.chain_base_hip_rl).call_newton_raphson()
+        # theta_RR = NewtonRaphson(self.pdlast[9:12], pd_leg4, self.qcurr[9:12], self.chain_base_foot_rr, self.chain_base_hip_rr).call_newton_raphson()
 
         theta_FL = NewtonRaphson(self.pdlast[0:3], pd_leg[0:3], self.qcurr[0:3], self.chain_base_foot_fl, self.chain_base_hip_fl).call_newton_raphson()
         theta_FR = NewtonRaphson(self.pdlast[3:6], pd_leg[3:6], self.qcurr[3:6], self.chain_base_foot_fr, self.chain_base_hip_fr).call_newton_raphson()
@@ -1133,7 +1149,7 @@ class QuadrupedController:
         
         return self.qstable
     
-    def walker(self, t, commands, errors, theta_curr, dist_error, midpoint, skip_stable, is_goal):
+    def walker(self, t, commands, errors, theta_curr, dist_error, midpoint, skip_stable, is_goal, angz):
         
         theta_last = None
         restart = False
@@ -1167,7 +1183,7 @@ class QuadrupedController:
                 t_curr = t - self.T_stab
             elif skip_stable == True:
                 t_curr = t
-            self.q_joints = self.walk_and_turn(t_curr, commands, theta_curr)
+            self.q_joints = self.walk_and_turn(t_curr, commands, theta_curr, angz)
             self.t_walk_fin = t
 
             # did 1e-1 and 4e-1 when max was 0.6 and 0.8
@@ -1175,7 +1191,8 @@ class QuadrupedController:
 
             # if (dist_error < 2e-1 and errors[2] <= 6e-1) or dist_error < 1.5e-1:
                 # goal has been found
-            if (dist_error < 1.3e-1) or (dist_error <1.5e-1 and is_goal == True):
+            # if (dist_error < 1.3e-1) or (dist_error <1.5e-1 and is_goal == True):
+            if (dist_error < 1.5e-1):
                 if self.all_four == True:
                     self.goal_found = True
                     print('goal found')

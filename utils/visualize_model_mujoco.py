@@ -13,7 +13,8 @@ from mujoco.viewer import launch
 # xml_file = "./models/go2/go2.xml"
 # xml_file = "./models/go2/scene.xml"
 # xml_file = "./models/go2/custom_map.xml"
-xml_file = "./models/go2/noel_maze.xml"
+# xml_file = "./models/go2/noel_maze_v0.xml"
+xml_file = "./models/go2/third_maze.xml"
 
 # load and launch the model
 model =  mujoco.MjModel.from_xml_path(xml_file)

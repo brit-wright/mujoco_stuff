@@ -1,6 +1,6 @@
 import mujoco
 from mujoco.viewer import launch
-import solve_maze_using_RRT as solveMaze
+import solve_maze_using_RRT_maze0 as solveMaze
 from math import sqrt, ceil
 
 # Features
@@ -88,8 +88,9 @@ def main():
 
     path_geoms = add_path_to_xml(inters, intermediates)
 
+    # base_xml_path = './models/go2/noel_maze_v0.xml'
     base_xml_path = './models/go2/noel_maze.xml'
-    new_xml_path = './models/go2/maze_with_geoms.xml'
+    new_xml_path = './models/go2/maze_with_geoms_new.xml'
 
     with open(base_xml_path, "r") as f:
         base_xml = f.read()
@@ -99,7 +100,7 @@ def main():
     with open(new_xml_path, "w") as f:
         f.write(new_xml)
         
-    # print(f'intermediates: {intermediates}')
+    print(f'intermediates: {intermediates}')
 
     # model = mujoco.MjModel.from_xml_path(new_xml_path)
     # launch(model)

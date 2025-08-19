@@ -68,3 +68,6 @@ Goal constraint used: if (dist_error < 1.3e-1) or (dist_error <1.5e-1 and is_goa
 Skip stabilization constraint also loosened: if abs(theta_last) < 0.4
 Still good wall-hugging. Slightly better waypoint movement than noel_maze_walk_turn1_point_0_v6
 I think this is good for now. TAKING A BREAK TO FOCUS ON SOMETHING ELSE :D
+
+-UPDATE: This one still overshoots a bit. RIP :'/
+I think I'll go back to version 7

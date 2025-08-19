@@ -6,7 +6,7 @@ import time
 # ===== Load saved states =====
 # saved_states = np.load('simulation_states.npz', allow_pickle=True)['states']
 # saved_states = np.load('scripts/recordings/noel_maze_walk_turn_point_8.npz', allow_pickle=True)['states']
-saved_states = np.load('scripts/recordings/noel_maze_walk_turn_1_point_0_v7.npz', allow_pickle=True)['states']
+saved_states = np.load('scripts/recordings/noel_maze_walk_turn_1_point_0_v5.npz', allow_pickle=True)['states']
 
 # ===== Load the MuJoCo model (must match original sim) =====
 model_path = './models/go2/maze_with_geoms.xml'  # change to your model file
