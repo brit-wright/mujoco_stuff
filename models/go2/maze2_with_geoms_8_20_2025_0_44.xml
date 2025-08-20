@@ -1,0 +1,39 @@
+<mujoco model="maze">
+
+    <!-- import the unitree go2 -->
+    <include file="go2_noel_maze.xml"/>
+
+    <!-- create the environment which contains the obstacles -->
+    <worldbody>
+        <geom name="obstacle1" type="box" size="0.5 0.5 0.2" pos="1.5 8.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle2" type="box" size="0.5 2 0.2" pos="1.5 5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle3" type="box" size="0.5 1 0.2" pos="1.5 1 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle4" type="box" size="0.5 1.5 0.2" pos="4.5 6.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle5" type="box" size="0.5 1.5 0.2" pos="4.5 1.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle6" type="box" size="0.5 1.5 0.2" pos="7.5 8.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle7" type="box" size="1 0.5 0.2" pos="8 4.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle8" type="box" size="0.5 0.5 0.2" pos="6.5 2.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle9" type="box" size="1 0.5 0.2" pos="9 0.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+
+        <geom name="bound_top" type="box" size="5 0.25 0.2" pos="5 10.25 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="bound_bottom" type="box" size="5 0.25 0.2" pos="5 -0.25 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="bound_left" type="box" size="0.25 5 0.2" pos="-0.25 5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="bound_right" type="box" size="0.25 5 0.2" pos="10.25 5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+
+    <geom name="node1" type="sphere" size="0.1" pos="0.6 0.6 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node2" type="sphere" size="0.1" pos="0.8385952532250415 2.5633728007426675 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node3" type="sphere" size="0.1" pos="2.291305284110898 2.6187553097593095 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node4" type="sphere" size="0.1" pos="3.855985894426218 3.6919471311566197 0.1" rgba="1 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="node5" type="sphere" size="0.1" pos="5.420666504741538 4.765138952553929 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node6" type="sphere" size="0.1" pos="7.231851368957012 5.929881396081162 0.1" rgba="1 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="node7" type="sphere" size="0.1" pos="9.043036233172487 7.094623839608394 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node8" type="sphere" size="0.1" pos="9.0 9.8 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="cap1to2" type="capsule" fromto="0.6 0.6 0.1  0.8385952532250415 2.5633728007426675 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap2to3" type="capsule" fromto="0.8385952532250415 2.5633728007426675 0.1  2.291305284110898 2.6187553097593095 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap3to4" type="capsule" fromto="2.291305284110898 2.6187553097593095 0.1  3.855985894426218 3.6919471311566197 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap4to5" type="capsule" fromto="3.855985894426218 3.6919471311566197 0.1  5.420666504741538 4.765138952553929 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap5to6" type="capsule" fromto="5.420666504741538 4.765138952553929 0.1  7.231851368957012 5.929881396081162 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap6to7" type="capsule" fromto="7.231851368957012 5.929881396081162 0.1  9.043036233172487 7.094623839608394 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap7to8" type="capsule" fromto="9.043036233172487 7.094623839608394 0.1  9.0 9.8 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+</worldbody>
+</mujoco>

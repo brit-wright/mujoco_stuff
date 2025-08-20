@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # load the mujoco model
     # mj_model_path = "./models/go2/scene.xml"
 
-    mj_model_path, path_nodes, intermediates = mjPath.main()
+    mj_model_path, path_nodes, intermediates, phrase = mjPath.main()
     model = mujoco.MjModel.from_xml_path(mj_model_path)
     data = mujoco.MjData(model)
 
@@ -321,4 +321,5 @@ if __name__ == '__main__':
         glfw.poll_events()
 
     print(f"Total simulation time: {t1_real_time - t0_real_time:.3f} seconds")
-    np.savez('simulation_states.npz', states=saved_states)
+    name = '/home/brittany/Mujoco_Example/scripts/recordings/simulation_states'+'_'+phrase+'.npz'
+    np.savez(name, states=saved_states)

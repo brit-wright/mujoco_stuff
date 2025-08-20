@@ -3,7 +3,7 @@ from mujoco.viewer import launch
 import solve_maze_using_RRT_maze2 as solveMaze
 from math import sqrt, ceil
 import csv
-
+from datetime import datetime
 # Features
 # This script basically takes in the waypoints and updates the .xml file
 # to include them in the Mujoco model
@@ -102,7 +102,11 @@ def main():
 
     # base_xml_path = './models/go2/noel_maze_v0.xml'
     base_xml_path = './models/go2/third_maze.xml'
-    new_xml_path = './models/go2/third_maze_with_geoms.xml'
+
+    tnow = datetime.now()
+    new_xml_path = './models/go2/maze2_with_geoms'+'_'+str(tnow.month)+'_'+str(tnow.day)+'_'+str(tnow.year)+'_'+str(tnow.hour)+'_'+str(tnow.minute)+'.xml'
+
+    phrase = new_xml_path[30:]
 
     with open(base_xml_path, "r") as f:
         base_xml = f.read()
@@ -117,7 +121,7 @@ def main():
     model = mujoco.MjModel.from_xml_path(new_xml_path)
     launch(model)
 
-    return new_xml_path, inters, intermediates
+    return new_xml_path, inters, intermediates, phrase
 
 if __name__ == "__main__":
     main()
