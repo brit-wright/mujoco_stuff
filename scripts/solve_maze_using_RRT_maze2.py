@@ -6,7 +6,7 @@ from math               import pi, sin, cos, atan2, sqrt, ceil, dist
 from scipy.spatial      import KDTree
 from shapely.geometry   import Point, LineString, Polygon, MultiPolygon, MultiLineString
 from shapely.prepared   import prep
-
+import csv
 # PARAMETERS
 STEP_SIZE = 0.5 # chose a static step size
 SMAX = 20000  # maximum number of step attempts
@@ -74,8 +74,8 @@ rect9 = LineString([[7.8, 1.2],
 (xA, xB, xC, xD) = ( 2, 4, 6, 8)
 (yA, yB, yC, yD) = ( 2, 4, 6, 8)
 
-xlabels = (xmin, xA, xB, xC, xD, xmax)
-ylabels = (ymin, yA, yB, yC, yD, ymax)
+xlabels = (xmin, 1, 2, 3, 4, 5, 6, 7, 8, 9, xmax)
+ylabels = (ymin, 1, 2, 3, 4, 5, 6, 7, 8, 9, ymax)
 
 
 # Draw the outer boundary/walls
@@ -92,7 +92,7 @@ bonus   = LineString([[xD, yC], [xD, yC]])
 # (xstart, ystart) = (21, 6)
 # (xgoal, ygoal) = (2, 16)
 
-(xstart, ystart) = (0.2, 0.2)
+(xstart, ystart) = (0.6, 0.6)
 (xgoal, ygoal) = (9, 9.8)
 
 # Visualization Utility
@@ -183,7 +183,7 @@ class Node:
         return walls.disjoint(line)
 
 # RRT Functions
-def rrt(startnode, goalnode, visual):
+def rrt(startnode, goalnode):
 # def rrt(startnode, goalnode, visual):
     t_rrt_start = time.time()
     startnode.parent = None
@@ -193,10 +193,6 @@ def rrt(startnode, goalnode, visual):
     def addtotree(oldnode, newnode):
         newnode.parent = oldnode
         tree.append(newnode)
-
-        # Visualize the new node
-        visual.drawEdge(oldnode, newnode, color = 'g', linewidth = 1)
-        visual.show()
 
     steps = 0
     while True:
@@ -268,21 +264,13 @@ def PostProcess(path):
 def main():
     print('Running with step size ', STEP_SIZE, ' and up to ', NMAX, ' nodes.')
 
-    # Create the figure
-    visual = Visualization()
-
     # Create the start and goal nodes
     startnode = Node(xstart, ystart)
     goalnode = Node(xgoal, ygoal)
 
-    # Visualize the start and goal nodes
-    visual.drawNode(startnode, color='orange', marker='o')
-    visual.drawNode(goalnode, color='purple', marker='o')
-    visual.show('Showing basic world') 
-
     # Call the RRT function
     print('Running RRT')
-    path = rrt(startnode, goalnode, visual)
+    path = rrt(startnode, goalnode)
     # path = rrt(startnode, goalnode)
 
     # If unable to connect path, note this
@@ -291,8 +279,6 @@ def main():
         return
     
     # Otherwise, show the path created
-    visual.drawPath(path, color='r', linewidth=1)
-    visual.show('Showing the raw path')
     print('Showing the raw path')
 
 
@@ -300,13 +286,16 @@ def main():
     PostProcess(path)
         
     # Show the post-processed path
-    visual.drawPath(path, color='b', linewidth=2)
-    visual.show('Showing the post-processed path')
     print('Showing the post-processed path')
     print(path)
 
-    waypoints = [[node.x, node.y, 0.1] for node in path]
-    return waypoints
+    with open('/home/brittany/IRIS_env_drake/maze2_results.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        for ele in path:
+            writer.writerow([ele.x, ele.y])
+
+    # waypoints = [[node.x, node.y, 0.1] for node in path]
+    # return waypoints
 
 if __name__ == "__main__":
     main()

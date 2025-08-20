@@ -1161,9 +1161,9 @@ class QuadrupedController:
             commands[1] = 0.0
 
             if commands[2] >= 0.0:
-                commands[2] = np.clip(commands[2], 0.0, 0.6)
+                commands[2] = np.clip(commands[2], 0.0, 0.4)
             elif commands[2] < 0.0:
-                commands[2] = np.clip(commands[2], -0.6, 0.0)
+                commands[2] = np.clip(commands[2], -0.4, 0.0)
 
         else:
             self.mode = 'walking'

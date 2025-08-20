@@ -1,0 +1,43 @@
+<mujoco model="maze">
+
+    <!-- import the unitree go2 -->
+    <include file="go2_noel_maze.xml"/>
+
+    <!-- create the environment which contains the obstacles -->
+    <worldbody>
+        <geom name="obstacle1" type="box" size="0.5 0.5 0.2" pos="1.5 8.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle2" type="box" size="0.5 2 0.2" pos="1.5 5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle3" type="box" size="0.5 1 0.2" pos="1.5 1 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle4" type="box" size="0.5 1.5 0.2" pos="4.5 6.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle5" type="box" size="0.5 1.5 0.2" pos="4.5 1.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle6" type="box" size="0.5 1.5 0.2" pos="7.5 8.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle7" type="box" size="1 0.5 0.2" pos="8 4.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle8" type="box" size="0.5 0.5 0.2" pos="6.5 2.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle9" type="box" size="1 0.5 0.2" pos="9 0.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+
+        <geom name="bound_top" type="box" size="5 0.25 0.2" pos="5 10.25 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="bound_bottom" type="box" size="5 0.25 0.2" pos="5 -0.25 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="bound_left" type="box" size="0.25 5 0.2" pos="-0.25 5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="bound_right" type="box" size="0.25 5 0.2" pos="10.25 5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+
+    <geom name="node1" type="sphere" size="0.1" pos="0.6 0.6 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node2" type="sphere" size="0.1" pos="0.6412327248630507 2.0818578237246657 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node3" type="sphere" size="0.1" pos="1.3515409623314196 2.770341149440669 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node4" type="sphere" size="0.1" pos="2.349613560829281 2.7197099997916157 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node5" type="sphere" size="0.1" pos="4.5196878124558735 3.588319249479731 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node6" type="sphere" size="0.1" pos="5.880959544625554 4.673830777728722 0.1" rgba="1 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="node7" type="sphere" size="0.1" pos="7.242231276795234 5.759342305977713 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node8" type="sphere" size="0.1" pos="8.461477606491528 6.714686297940992 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node9" type="sphere" size="0.1" pos="8.730738803245764 8.257343148970497 0.1" rgba="1 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="node10" type="sphere" size="0.1" pos="9.0 9.8 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="cap1to2" type="capsule" fromto="0.6 0.6 0.1  0.6412327248630507 2.0818578237246657 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap2to3" type="capsule" fromto="0.6412327248630507 2.0818578237246657 0.1  1.3515409623314196 2.770341149440669 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap3to4" type="capsule" fromto="1.3515409623314196 2.770341149440669 0.1  2.349613560829281 2.7197099997916157 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap4to5" type="capsule" fromto="2.349613560829281 2.7197099997916157 0.1  4.5196878124558735 3.588319249479731 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap5to6" type="capsule" fromto="4.5196878124558735 3.588319249479731 0.1  5.880959544625554 4.673830777728722 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap6to7" type="capsule" fromto="5.880959544625554 4.673830777728722 0.1  7.242231276795234 5.759342305977713 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap7to8" type="capsule" fromto="7.242231276795234 5.759342305977713 0.1  8.461477606491528 6.714686297940992 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap8to9" type="capsule" fromto="8.461477606491528 6.714686297940992 0.1  8.730738803245764 8.257343148970497 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap9to10" type="capsule" fromto="8.730738803245764 8.257343148970497 0.1  9.0 9.8 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+</worldbody>
+</mujoco>

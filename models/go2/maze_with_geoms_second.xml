@@ -1,0 +1,45 @@
+<mujoco model="maze">
+
+    <!-- import the unitree go2 -->
+    <include file="go2_noel_maze.xml"/>
+
+    <!-- create the environment which contains the obstacles -->
+    <worldbody>
+        <geom name="obstacle1" type="box" size="1 0.5 0.2" pos="2 8.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle2" type="box" size="0.5 1 0.2" pos="1.5 7 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle3" type="box" size="0.5 1 0.2" pos="3.5 6 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle4" type="box" size="1 0.5 0.2" pos="3 4.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle5" type="box" size="2 0.5 0.2" pos="3 2.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle6" type="box" size="1.5 0.5 0.2" pos="4.5 0.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle7" type="box" size="0.5 1 0.2" pos="6.5 1 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle8" type="box" size="0.5 2 0.2" pos="7.5 5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle9" type="box" size="0.5 0.5 0.2" pos="8.5 1.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle10" type="box" size="0.5 1.5 0.2" pos="9.5 1.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle11" type="box" size="0.5 2.5 0.2" pos="5.5 6.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle12" type="box" size="2 0.5 0.2" pos="8 8.5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="obstacle13" type="box" size="0.5 2 0.2" pos="9.5 6 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+
+        <geom name="bound_top" type="box" size="5 0.25 0.2" pos="5 10.25 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="bound_bottom" type="box" size="5 0.25 0.2" pos="5 -0.25 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="bound_left" type="box" size="0.25 5 0.2" pos="-0.25 5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+        <geom name="bound_right" type="box" size="0.25 5 0.2" pos="10.25 5 0.2" rgba="1 0 0 1" contype="1" conaffinity="1"/>
+
+    <geom name="node1" type="sphere" size="0.1" pos="0.6 0.7 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node2" type="sphere" size="0.1" pos="2.7 1.3 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node3" type="sphere" size="0.1" pos="4.2 1.5 0.1" rgba="1 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="node4" type="sphere" size="0.1" pos="5.7 1.7 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node5" type="sphere" size="0.1" pos="5.545103 2.0138583 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node6" type="sphere" size="0.1" pos="6.6176786 4.204213 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node7" type="sphere" size="0.1" pos="6.65570995 5.7991315 0.1" rgba="1 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="node8" type="sphere" size="0.1" pos="6.6937413 7.39405 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="node9" type="sphere" size="0.1" pos="8.5 7.5 0.1" rgba="0 0 1 0.5" contype="2" conaffinity="2"/>
+<geom name="cap1to2" type="capsule" fromto="0.6 0.7 0.1  2.7 1.3 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap2to3" type="capsule" fromto="2.7 1.3 0.1  4.2 1.5 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap3to4" type="capsule" fromto="4.2 1.5 0.1  5.7 1.7 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap4to5" type="capsule" fromto="5.7 1.7 0.1  5.545103 2.0138583 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap5to6" type="capsule" fromto="5.545103 2.0138583 0.1  6.6176786 4.204213 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap6to7" type="capsule" fromto="6.6176786 4.204213 0.1  6.65570995 5.7991315 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap7to8" type="capsule" fromto="6.65570995 5.7991315 0.1  6.6937413 7.39405 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+<geom name="cap8to9" type="capsule" fromto="6.6937413 7.39405 0.1  8.5 7.5 0.1" size="0.1" rgba="0 1 0 0.5" contype="2" conaffinity="2"/>
+</worldbody>
+</mujoco>
