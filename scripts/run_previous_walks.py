@@ -6,10 +6,10 @@ import time
 # ===== Load saved states =====
 # saved_states = np.load('simulation_states.npz', allow_pickle=True)['states']
 # saved_states = np.load('scripts/recordings/noel_maze_walk_turn_point_8.npz', allow_pickle=True)['states']
-saved_states = np.load('/home/brittany/Mujoco_Example/scripts/recordings/simulation_states_8_20_2025_0_14.xml.npz', allow_pickle=True)['states']
+saved_states = np.load('/home/brittany/Mujoco_Example/scripts/recordings/simulation_states_8_20_2025_1_19.xml.npz', allow_pickle=True)['states']
 
 # ===== Load the MuJoCo model (must match original sim) =====
-model_path = '/home/brittany/Mujoco_Example/models/go2/maze1_with_geoms_8_20_2025_0_14.xml'  # change to your model file
+model_path = '/home/brittany/Mujoco_Example/models/go2/maze2_with_geoms_8_20_2025_1_19.xml'  # change to your model file
 model = mujoco.MjModel.from_xml_path(model_path)
 data = mujoco.MjData(model)
 

@@ -100,6 +100,9 @@ simulation_states_8_20_2025_1_14.xml.npz
 simulation_states_8_20_2025_1_19.xml.npz
 - this is for maze2 and IRIS
 
+simulation_states_8_20_2025_12_10.xml.npz
+- this is for maze0 and IRIS + GPU RRT
+
 simulation_states_8_20_2025_1_49.xml.npz
 - this is for maze1 and IRIS + GPU RRT
 

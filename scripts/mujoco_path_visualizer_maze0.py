@@ -101,8 +101,8 @@ def main():
 
     path_geoms = add_path_to_xml(inters, intermediates)
 
-    # base_xml_path = './models/go2/noel_maze_v0.xml'
-    base_xml_path = './models/go2/noel_maze.xml'
+    base_xml_path = './models/go2/noel_maze_v0.xml'
+    # base_xml_path = './models/go2/noel_maze.xml'
 
     tnow = datetime.now()
     new_xml_path = './models/go2/maze0_with_geoms'+'_'+str(tnow.month)+'_'+str(tnow.day)+'_'+str(tnow.year)+'_'+str(tnow.hour)+'_'+str(tnow.minute)+'.xml'

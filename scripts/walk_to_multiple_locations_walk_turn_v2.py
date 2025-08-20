@@ -22,7 +22,7 @@ from definitions.go2_definitions import Mujoco_IDX_go2
 from QuadrupedControllerv1_2 import QuadrupedController
 from hw5code.TransformHelpers import *
 # from Mujoco_Example.utils import mujoco_path_visualizer as mjVis
-import mujoco_path_visualizer_maze2 as mjPath
+import mujoco_path_visualizer_maze0 as mjPath
 
 def quaternion_to_yaw(w, x, y, z):
     return atan2(2*(w*z + x*y), 1 - 2*(y**2 + z**2))
