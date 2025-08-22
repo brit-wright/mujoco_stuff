@@ -1,5 +1,5 @@
 # Project Overview
-Hello! Thanks for dropping by! This repo stores files for 'phase 1' of research I did for Summer 2025. The 
+Hello! Thanks for dropping by! This repo stores files for 'phase 3' of research I did for Summer 2025. The 
 goal of my project was to develop a path-planning algorithm and model-based controller for the Unitree Go2 
 quadruped. [Phase 1](https://github.com/brit-wright/Research-Code) involved implementing CPU-based RRT and GPU-parallelized RRT planners. 
 [Phase 2](https://github.com/brit-wright/IRIS_env_drake) involved using convex decomposition through 
