@@ -7,6 +7,12 @@ quadruped. [Phase 1](https://github.com/brit-wright/Research-Code) involved impl
 and using it to plan. Finally, Phase 3 involved building and simulating a model-based controller for the 
 Go2 quadruped in Mujoco simulation.
 
+# Software/Library Requirements
+This repo is entirely Python-based. The following libraries are needed: numpy, matplotlib, shapely, 
+scipy, torch, mujoco-py, glfw, and optionally cProfile (for time-profiling). Since part of this project involves
+GPU-parallelization, a CUDA-capable machine is recommended, but if your machine doesn't have a GPU,
+setting device='cpu' will work for testing/debugging, just no actual parallelization.
+
 # About the branches
 For the most recent (and a better organized) version of this project, head over to the 'branch1' branch. The
 main files used for walking are walk_to_multiple_locationsv2.py and QuadrupedControllerv1_2.py
